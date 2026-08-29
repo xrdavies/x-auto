@@ -4,6 +4,21 @@ Start the service with a profile, expected handle, and socket path. All requests
 
 The foreground CLI accepts either `--profile <id>` or `--profile-path <absolute-path>`. The two selectors are mutually exclusive.
 
+The repository includes a Node.js standard-library client template at [`examples/unix-socket-client.mjs`](../examples/unix-socket-client.mjs). It only checks `/ready` by default; copy and enable the action call needed by the integrating application.
+
+The same API can be called with `curl`:
+
+```bash
+SOCKET="$HOME/.x-auto/state/<profile-id>.sock"
+
+curl --unix-socket "$SOCKET" http://localhost/ready
+
+curl --unix-socket "$SOCKET" \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"要发布的推文内容"}' \
+  http://localhost/post
+```
+
 ## Health
 
 ```http

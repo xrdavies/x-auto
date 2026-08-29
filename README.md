@@ -15,6 +15,8 @@ Initial scope:
 
 The tool never stores X passwords or cookie values. It stops on login challenges and never downgrades a failed thread workflow into independent posts.
 
+For a Node.js client example, see [`examples/unix-socket-client.mjs`](examples/unix-socket-client.mjs).
+
 ## Requirements
 
 - macOS for local commands
