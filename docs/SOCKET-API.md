@@ -2,6 +2,8 @@
 
 Start the service with a profile, expected handle, and socket path. All requests and responses use JSON.
 
+The foreground CLI accepts either `--profile <id>` or `--profile-path <absolute-path>`. The two selectors are mutually exclusive.
+
 ## Health
 
 ```http

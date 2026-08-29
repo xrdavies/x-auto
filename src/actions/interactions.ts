@@ -5,15 +5,15 @@ import type { ElementHandle, HTTPResponse, Page } from 'puppeteer-core';
 import { firstVisible, firstVisibleWithin, waitForVisible } from '../browser/dom.js';
 import { openSession } from '../browser/session.js';
 import { XAutoError } from '../core/errors.js';
-import { requireAvailableProfile } from '../core/profiles.js';
+import { requireAvailableSelectedProfile, type ProfileSelection } from '../core/profiles.js';
 import { parseTweetTarget } from '../core/targets.js';
 import { checkText } from '../core/text.js';
 
-type InteractionOptions = { profileId: string; handle: string; tweet: string; headed?: boolean };
+type InteractionOptions = ProfileSelection & { handle: string; tweet: string; headed?: boolean };
 
 const openTarget = async (options: InteractionOptions) => {
   const target = parseTweetTarget(options.tweet);
-  const profile = await requireAvailableProfile(options.profileId);
+  const profile = await requireAvailableSelectedProfile({ profileId: options.profileId, profilePath: options.profilePath });
   const session = await openSession(profile.profilePath, options.handle, !options.headed);
   try {
     await session.page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: 45_000 });

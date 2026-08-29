@@ -11,9 +11,9 @@ import { threadPosts } from './actions/thread.js';
 import { checkSession } from './browser/session.js';
 import { serializeError, XAutoError } from './core/errors.js';
 import { recordAction } from './core/logs.js';
-import { requireAvailableProfile } from './core/profiles.js';
+import { requireAvailableSelectedProfile, requireSelectedProfile, type ProfileSelection } from './core/profiles.js';
 
-type ServerOptions = { profileId: string; handle: string; socketPath: string };
+type ServerOptions = ProfileSelection & { handle: string; socketPath: string };
 
 const bodyLimit = 64 * 1024;
 
@@ -41,7 +41,9 @@ const socketIsActive = (socketPath: string) => new Promise<boolean>((resolveProm
   socket.once('error', () => resolvePromise(false));
 });
 
-export const startServer = async ({ profileId, handle, socketPath }: ServerOptions) => {
+export const startServer = async ({ profileId, profilePath, handle, socketPath }: ServerOptions) => {
+  const selectedProfile = requireSelectedProfile({ profileId, profilePath });
+  const selection = { profileId, profilePath };
   let queue = Promise.resolve();
   const enqueue = <T>(task: () => Promise<T>) => {
     const next = queue.then(task);
@@ -52,7 +54,7 @@ export const startServer = async ({ profileId, handle, socketPath }: ServerOptio
   const server = createServer(async (request, response) => {
     const path = request.url?.split('?')[0] || '';
     if (request.method === 'GET' && path === '/ready') {
-      writeJson(response, 200, { success: true, service: 'x-auto', profile: profileId });
+      writeJson(response, 200, { success: true, service: 'x-auto', profile: selectedProfile.id, profilePath: selectedProfile.profilePath });
       return;
     }
     if (request.method !== 'POST') {
@@ -64,9 +66,9 @@ export const startServer = async ({ profileId, handle, socketPath }: ServerOptio
     try {
       const payload = await readBody(request);
       const result = await enqueue(async () => {
-        const base = { profileId, handle, headed: false };
+        const base = { ...selection, handle, headed: false };
         if (action === 'check') {
-          const profile = await requireAvailableProfile(profileId);
+          const profile = await requireAvailableSelectedProfile(selection);
           return checkSession(profile.profilePath, handle, true);
         }
         if (action === 'post') return post({ ...base, text: String(payload.text ?? '') });
@@ -82,10 +84,10 @@ export const startServer = async ({ profileId, handle, socketPath }: ServerOptio
         throw new XAutoError('INVALID_ARGUMENT', `未知操作：${action}`);
       });
       const data = result as Record<string, unknown>;
-      await recordAction(profileId, action, { success: true, data });
+      await recordAction(selectedProfile.id, action, { success: true, data });
       writeJson(response, 200, { success: true, action, ...data });
     } catch (error) {
-      await recordAction(profileId, action, { success: false, error }).catch(() => undefined);
+      await recordAction(selectedProfile.id, action, { success: false, error }).catch(() => undefined);
       const serialized = serializeError(error);
       writeJson(response, serialized.code === 'INTERNAL_ERROR' ? 500 : 422, { success: false, action, error: serialized });
     }
@@ -105,10 +107,11 @@ export const startServer = async ({ profileId, handle, socketPath }: ServerOptio
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const profileId = process.env.X_AUTO_PROFILE || '';
+  const profilePath = process.env.X_AUTO_PROFILE_PATH || '';
   const handle = process.env.X_AUTO_HANDLE || '';
   const socketPath = resolve(process.env.X_AUTO_SOCKET || `${process.env.HOME}/.x-auto/state/publisher.sock`);
-  if (!profileId || !handle) throw new XAutoError('INVALID_ARGUMENT', 'serve requires X_AUTO_PROFILE and X_AUTO_HANDLE');
-  const server = await startServer({ profileId, handle, socketPath });
+  if ((!profileId && !profilePath) || !handle) throw new XAutoError('INVALID_ARGUMENT', 'serve requires X_AUTO_PROFILE or X_AUTO_PROFILE_PATH, plus X_AUTO_HANDLE');
+  const server = await startServer({ profileId: profileId || undefined, profilePath: profilePath || undefined, handle, socketPath });
   console.log(`x-auto listening on ${socketPath}`);
   const shutdown = () => server.close(() => process.exit(0));
   process.on('SIGINT', shutdown);

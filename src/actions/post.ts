@@ -1,6 +1,6 @@
 import { XAutoError } from '../core/errors.js';
 import { checkText } from '../core/text.js';
-import { requireAvailableProfile } from '../core/profiles.js';
+import { requireAvailableSelectedProfile, type ProfileSelection } from '../core/profiles.js';
 import { firstVisible } from '../browser/dom.js';
 import { openSession } from '../browser/session.js';
 
@@ -10,9 +10,9 @@ const extractTweetId = (payload: unknown) => {
   return [result?.rest_id, result?.legacy?.id_str].find((value) => typeof value === 'string' && /^\d+$/.test(value));
 };
 
-export const post = async ({ profileId, handle, text, headed = false }: { profileId: string; handle: string; text: string; headed?: boolean }) => {
+export const post = async ({ profileId, profilePath, handle, text, headed = false }: ProfileSelection & { handle: string; text: string; headed?: boolean }) => {
   const checked = checkText(text);
-  const profile = await requireAvailableProfile(profileId);
+  const profile = await requireAvailableSelectedProfile({ profileId, profilePath });
   const session = await openSession(profile.profilePath, handle, !headed);
   try {
     const composer = await firstVisible(session.page, ['[data-testid="tweetTextarea_0"]', 'div[contenteditable="true"][role="textbox"]']);

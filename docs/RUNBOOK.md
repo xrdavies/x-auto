@@ -38,6 +38,34 @@ node dist/cli.js profile backup rebasecommunity
 
 Only one Chrome process may use a profile at a time. Commands fail with `PROFILE_IN_USE` when the selected profile is already open.
 
+### Existing Profile Paths
+
+CLI actions can use an existing Chrome user data directory directly:
+
+```bash
+node dist/cli.js profile check \
+  --profile-path /absolute/path/to/profile \
+  --handle RebaseCommunity
+
+node dist/cli.js post \
+  --profile-path /absolute/path/to/profile \
+  --handle RebaseCommunity \
+  --text "hello"
+```
+
+`--profile` and `--profile-path` are mutually exclusive, and explicit paths must be absolute. Normal actions do not copy or move the directory; Chrome may update it as part of the requested action. An explicit `profile backup` command copies the selected directory under `~/.x-auto/backups`.
+
+Remote CLI forwarding supports the same selector:
+
+```bash
+node dist/cli.js remote profile-check \
+  --host rebase@x-auto.host \
+  --profile-path /home/rebase/.local/share/rebase-x-profile \
+  --handle RebaseCommunity
+```
+
+Remote VNC login sessions and systemd user services deliberately require managed Profile IDs. Use `--profile-path` for maintenance checks and one-shot actions, not long-running service configuration.
+
 ## Text Validation
 
 ```bash
@@ -151,6 +179,8 @@ node dist/cli.js serve \
   --handle RebaseCommunity \
   --socket ~/.x-auto/state/rebasecommunity.sock
 ```
+
+A foreground service can also use `--profile-path /absolute/path`. The systemd installation workflow continues to use managed Profile IDs.
 
 Remote systemd user service:
 

@@ -3,7 +3,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { XAutoError } from '../core/errors.js';
 import { checkText } from '../core/text.js';
-import { requireAvailableProfile } from '../core/profiles.js';
+import { requireAvailableSelectedProfile, type ProfileSelection } from '../core/profiles.js';
 import { firstVisible, visibleElements, waitForVisibleElements } from '../browser/dom.js';
 import { openSession } from '../browser/session.js';
 
@@ -25,10 +25,10 @@ export const readThreadFile = async (path: string) => {
 
 const composerSelector = '[data-testid="tweetTextarea_0"]';
 
-export const threadPosts = async ({ profileId, handle, texts, headed = false }: { profileId: string; handle: string; texts: string[]; headed?: boolean }) => {
+export const threadPosts = async ({ profileId, profilePath, handle, texts, headed = false }: ProfileSelection & { handle: string; texts: string[]; headed?: boolean }) => {
   const posts = texts.map((text) => checkText(text));
   if (posts.length < 2) throw new XAutoError('THREAD_INVALID', 'Thread 至少需要两条推文');
-  const profile = await requireAvailableProfile(profileId);
+  const profile = await requireAvailableSelectedProfile({ profileId, profilePath });
   const session = await openSession(profile.profilePath, handle, !headed);
   try {
     await session.page.goto('https://x.com/compose/post', { waitUntil: 'domcontentloaded', timeout: 45_000 });
@@ -91,7 +91,7 @@ export const threadPosts = async ({ profileId, handle, texts, headed = false }: 
   }
 };
 
-export const thread = async ({ profileId, handle, file, headed = false }: { profileId: string; handle: string; file: string; headed?: boolean }) => {
+export const thread = async ({ profileId, profilePath, handle, file, headed = false }: ProfileSelection & { handle: string; file: string; headed?: boolean }) => {
   const posts = await readThreadFile(file);
-  return threadPosts({ profileId, handle, texts: posts.map((post) => post.text), headed });
+  return threadPosts({ profileId, profilePath, handle, texts: posts.map((post) => post.text), headed });
 };

@@ -41,6 +41,15 @@ pnpm dev -- profile status rebasecommunity
 pnpm dev -- profile backup rebasecommunity
 ```
 
+Use an existing Chrome user data directory without copying it:
+
+```bash
+pnpm dev -- profile check --profile-path /absolute/path/to/profile --handle RebaseCommunity
+pnpm dev -- post --profile-path /absolute/path/to/profile --handle RebaseCommunity --text "hello"
+```
+
+`--profile` and `--profile-path` are mutually exclusive. Explicit paths must be absolute.
+
 ## Text And Publishing
 
 ```bash
