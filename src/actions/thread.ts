@@ -30,7 +30,8 @@ const threadComposers = async (page: import('puppeteer-core').Page) => {
   const composers = [];
   for (const candidate of candidates) {
     const testId = await candidate.evaluate((element) => element.getAttribute('data-testid'));
-    if (testId && /^tweetTextarea_\d+$/.test(testId)) composers.push(candidate);
+    const isThreadSized = await candidate.evaluate((element) => element.getBoundingClientRect().height >= 50);
+    if (testId && /^tweetTextarea_\d+$/.test(testId) && isThreadSized) composers.push(candidate);
     else await candidate.dispose();
   }
   return composers;
