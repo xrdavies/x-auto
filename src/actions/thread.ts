@@ -66,9 +66,23 @@ export const threadPosts = async ({ profileId, profilePath, handle, texts, heade
     }
     const disabled = await publishAll.evaluate((element) => element.getAttribute('aria-disabled') === 'true' || element.hasAttribute('disabled'));
     if (disabled) {
+      const composerStates = await session.page.$$eval(composerSelector, (elements) => elements.map((element) => {
+        const node = element as HTMLElement;
+        const style = window.getComputedStyle(node);
+        const rect = node.getBoundingClientRect();
+        return {
+          testId: node.getAttribute('data-testid'),
+          visible: style.visibility !== 'hidden' && style.display !== 'none' && rect.width > 0 && rect.height > 0,
+          characters: Array.from(node.innerText || node.textContent || '').length,
+        };
+      }));
+      const alerts = await session.page.$$eval('[role="alert"]', (elements) => elements
+        .map((element) => (element.textContent || '').trim())
+        .filter(Boolean)
+        .slice(0, 5));
       await publishAll.dispose();
       throw new XAutoError('PUBLISH_FAILED', 'Thread 全部发布控件处于禁用状态，请检查每条内容和页面提示', {
-        details: { posts: posts.length, label },
+        details: { posts: posts.length, label, composerStates, alerts },
       });
     }
 
