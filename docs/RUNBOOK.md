@@ -17,6 +17,29 @@ pnpm install
 pnpm build
 ```
 
+## Execution Modes
+
+### One-shot CLI
+
+Local and remote action commands execute one operation without a publisher service. Each command validates the request, starts Chrome with the selected Profile, performs the action, closes Chrome, and exits. There is no queue shared across separate CLI processes.
+
+```bash
+node dist/cli.js post --profile <profile-id> --handle <x-handle> --text "one-shot post"
+node dist/cli.js remote post --host <ssh-user>@<remote-host> --profile <profile-id> --handle <x-handle> --text "remote one-shot post"
+```
+
+`XAutoClient` does not implement this mode. It only connects to an already-running Unix Socket service.
+
+### Publisher Service
+
+Start one service instance for each Profile. The service process stays resident, but Chrome starts and closes for every action. Requests received by one service instance are executed through its serialized queue.
+
+```text
+application -> XAutoClient or curl -> profile socket -> profile service queue -> Chrome action
+```
+
+Multiple Profiles can be resident at the same time because each has a separate systemd instance, socket, and queue. They may execute concurrently. Never send direct CLI actions or start a second service for a Profile already managed by a service; those paths do not share its queue.
+
 ## Profile Login
 
 Create and open a profile in normal Chrome:
@@ -194,6 +217,17 @@ node dist/cli.js remote service-stop --host <ssh-user>@<remote-host> --profile <
 ```
 
 The Unix socket mode is `0600`. Actions for one profile are serialized. Action logs are stored under `~/.x-auto/state` without post text, cookie values, passwords, or request headers.
+
+For two Profiles, install and start two independent instances:
+
+```bash
+node dist/cli.js remote service-install --host <ssh-user>@<remote-host> --profile <first-profile> --handle <first-handle>
+node dist/cli.js remote service-install --host <ssh-user>@<remote-host> --profile <second-profile> --handle <second-handle>
+node dist/cli.js remote service-start --host <ssh-user>@<remote-host> --profile <first-profile>
+node dist/cli.js remote service-start --host <ssh-user>@<remote-host> --profile <second-profile>
+```
+
+Applications connect to `~/.x-auto/state/<first-profile>.sock` and `~/.x-auto/state/<second-profile>.sock` with separate `XAutoClient` instances.
 
 ## Failure Handling
 

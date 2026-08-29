@@ -4,6 +4,14 @@ Start the service with a profile, expected handle, and socket path. All requests
 
 The foreground CLI accepts either `--profile <id>` or `--profile-path <absolute-path>`. The two selectors are mutually exclusive.
 
+## Service Model
+
+`XAutoClient` and `curl` are service clients; they do not start the service or perform direct one-shot browser automation. Start the service with CLI `serve` or manage its remote systemd unit with the CLI `remote service-*` commands.
+
+One service instance binds one Profile to one Unix socket. Requests to that instance share a serialized queue. The service process stays resident, but Chrome starts and closes for every action. Run multiple Profiles as separate service instances with different sockets; their queues are independent and may execute concurrently.
+
+Do not mix direct CLI actions or duplicate service instances with the service for the same Profile. They bypass its queue and may contend for the Chrome Profile.
+
 The repository includes a thin TypeScript client and a runnable Node.js example at [`examples/unix-socket-client.mjs`](../examples/unix-socket-client.mjs). Import `XAutoClient` from the package after `pnpm build`:
 
 ```ts

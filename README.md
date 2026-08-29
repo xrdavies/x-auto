@@ -15,6 +15,17 @@ Initial scope:
 
 The tool never stores X passwords or cookie values. It stops on login challenges and never downgrades a failed thread workflow into independent posts.
 
+## Usage Modes
+
+| Mode | Start and invoke | Service required | Queue |
+| --- | --- | --- | --- |
+| One-shot | Run a local or remote CLI action | No | No shared queue |
+| Service | Start `serve` or a systemd unit, then call it with `XAutoClient` or `curl` | Yes | One serialized queue per service instance |
+
+One-shot CLI actions start Chrome for one operation and close it afterward. `XAutoClient` is only a Unix Socket client; it does not provide direct one-shot browser automation or start the service.
+
+Each service instance is configured for one Profile and one socket. The service process stays resident, while Chrome still starts and closes for each queued action. Multiple Profiles can run as separate service instances with separate sockets and independent queues. Once a Profile has a service, send every automated action for that Profile through its socket; direct CLI actions and duplicate service instances bypass that queue and can conflict.
+
 For a Node.js client example, see [`examples/unix-socket-client.mjs`](examples/unix-socket-client.mjs).
 
 Internal Node.js applications can import the thin client after `pnpm build`:
@@ -107,3 +118,5 @@ pnpm dev -- remote service-start --host <ssh-user>@<remote-host> --profile <prof
 pnpm dev -- remote service-status --host <ssh-user>@<remote-host> --profile <profile-id>
 pnpm dev -- remote service-stop --host <ssh-user>@<remote-host> --profile <profile-id>
 ```
+
+Use a different Profile ID and socket for each additional resident service. `XAutoClient` and `curl` invoke an existing service; the CLI `serve` and `remote service-*` commands manage its lifecycle.
