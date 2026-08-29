@@ -11,7 +11,7 @@ import { readThreadFile, thread } from './actions/thread.js';
 import { comment, like, quote, retweet } from './actions/interactions.js';
 import { parseTweetTarget } from './core/targets.js';
 import { defaultRemoteHost } from './remote/ssh.js';
-import { remoteAction, remoteCheck, remoteDeploy, remoteInstall, remoteLoginStart, remoteLoginStatus, remoteLoginStop, remoteServiceAction, remoteServiceInstall } from './remote/commands.js';
+import { remoteAction, remoteCheck, remoteDeploy, remoteInstall, remoteLoginStart, remoteLoginStatus, remoteLoginStop, remoteServiceAction, remoteServiceInstall, remoteThreadAction } from './remote/commands.js';
 import { startServer } from './server.js';
 import { paths } from './core/paths.js';
 
@@ -173,7 +173,9 @@ const main = async () => {
         if (arg === '--host') { index += 1; continue; }
         forwarded.push(arg);
       }
-      const output = await remoteAction(host, forwarded);
+      const output = command === 'thread'
+        ? await remoteThreadAction(host, forwarded, value('--file') || '')
+        : await remoteAction(host, forwarded);
       process.stdout.write(`${output}\n`);
     } else throw new XAutoError('INVALID_ARGUMENT', '未知 remote 命令');
     return;

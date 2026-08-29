@@ -1,5 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -56,4 +56,23 @@ export const stopTunnel = async (host: string) => {
   if (!existsSync(socket)) return;
   await execFileAsync('ssh', ['-S', socket, '-O', 'exit', host]).catch(() => undefined);
   if (existsSync(socket)) await unlink(socket);
+};
+
+export const uploadThreadFile = async (host: string, localPath: string) => {
+  if (!existsSync(localPath)) throw new XAutoError('THREAD_INVALID', `Thread 文件不存在：${localPath}`);
+  const home = (await ssh(host, 'printf %s "$HOME"')).stdout;
+  const remoteDirectory = `${home}/.x-auto/state/uploads`;
+  const remotePath = `${remoteDirectory}/thread-${randomUUID()}.jsonl`;
+  await ssh(host, `mkdir -p ${shellQuote(remoteDirectory)} && chmod 700 ${shellQuote(remoteDirectory)}`);
+  try {
+    await execFileAsync('rsync', ['-az', localPath, `${host}:${remotePath}`]);
+    await ssh(host, `chmod 600 ${shellQuote(remotePath)}`);
+    return remotePath;
+  } catch (error) {
+    throw new XAutoError('REMOTE_DEPLOY_FAILED', error instanceof Error ? error.message : String(error));
+  }
+};
+
+export const removeRemoteFile = async (host: string, remotePath: string) => {
+  await ssh(host, `if [ -f ${shellQuote(remotePath)} ]; then unlink ${shellQuote(remotePath)}; fi`);
 };

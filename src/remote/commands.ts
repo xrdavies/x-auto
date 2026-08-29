@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { normalizeProfileId } from '../core/profiles.js';
-import { defaultRemoteHost, deploy, remoteDir, remoteNodeDir, shellQuote, ssh, sshWithInput, startTunnel, stopTunnel } from './ssh.js';
+import { defaultRemoteHost, deploy, remoteDir, remoteNodeDir, removeRemoteFile, shellQuote, ssh, sshWithInput, startTunnel, stopTunnel, uploadThreadFile } from './ssh.js';
 
 export const remoteCheck = async (host = defaultRemoteHost) => {
   const { stdout } = await ssh(host, 'set -e; . /etc/os-release; printf "os=%s %s\\narch=%s\\nuser=%s\\n" "$ID" "$VERSION_ID" "$(uname -m)" "$(whoami)"; for cmd in google-chrome-stable Xvfb x11vnc xdpyinfo curl rsync openssl; do command -v "$cmd" >/dev/null && echo "$cmd=ok" || echo "$cmd=missing"; done; if [ -x "$HOME/.local/node-v24.15.0-linux-x64/bin/node" ]; then "$HOME/.local/node-v24.15.0-linux-x64/bin/node" -v; else echo node24=missing; fi');
@@ -44,6 +44,19 @@ export const remoteLoginStatus = async (host: string, profileId: string) => (awa
 export const remoteAction = async (host: string, args: string[]) => {
   const command = `export PATH=${remoteNodeDir}:$PATH; export CHROME_PATH=/usr/bin/google-chrome-stable; cd ${remoteDir}; node dist/cli.js ${args.map(shellQuote).join(' ')}`;
   return (await ssh(host, command)).stdout.trim();
+};
+
+export const remoteThreadAction = async (host: string, args: string[], localFile: string) => {
+  const forwarded = [...args];
+  const fileIndex = forwarded.indexOf('--file');
+  if (fileIndex < 0) throw new Error('remote thread requires --file');
+  const remoteFile = await uploadThreadFile(host, localFile);
+  forwarded[fileIndex + 1] = remoteFile;
+  try {
+    return await remoteAction(host, forwarded);
+  } finally {
+    await removeRemoteFile(host, remoteFile).catch(() => undefined);
+  }
 };
 
 export const remoteServiceInstall = async (host: string, profileId: string, handle: string) => {

@@ -169,6 +169,8 @@ node dist/cli.js remote post \
 
 The same applies to `thread`, `retweet`, `quote`, `like`, `comment`, and `profile-check`.
 
+For `remote thread`, `--file` points to a local JSONL file. x-auto uploads it to a private remote temporary directory and removes it after the action finishes.
+
 ## Publisher Service
 
 Local foreground service:
