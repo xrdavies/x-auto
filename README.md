@@ -48,3 +48,12 @@ pnpm dev -- thread --profile rebasecommunity --handle RebaseCommunity --file thr
 ```
 
 Use `--dry-run` to validate all text without opening Chrome. Thread publishing requires X's add-post and publish-all controls; missing controls fail and never fall back to independent posts.
+
+## Interactions
+
+```bash
+pnpm dev -- retweet --profile rebasecommunity --handle RebaseCommunity --tweet https://x.com/user/status/123
+pnpm dev -- quote --profile rebasecommunity --handle RebaseCommunity --tweet 123 --text "quote"
+pnpm dev -- like --profile rebasecommunity --handle RebaseCommunity --tweet 123
+pnpm dev -- comment --profile rebasecommunity --handle RebaseCommunity --tweet 123 --text "reply"
+```

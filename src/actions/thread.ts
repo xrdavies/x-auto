@@ -4,7 +4,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { XAutoError } from '../core/errors.js';
 import { checkText } from '../core/text.js';
 import { requireAvailableProfile } from '../core/profiles.js';
-import { firstVisible, visibleElements } from '../browser/dom.js';
+import { firstVisible, visibleElements, waitForVisibleElements } from '../browser/dom.js';
 import { openSession } from '../browser/session.js';
 
 export const readThreadFile = async (path: string) => {
@@ -32,7 +32,7 @@ export const thread = async ({ profileId, handle, file, headed = false }: { prof
   try {
     await session.page.goto('https://x.com/compose/post', { waitUntil: 'domcontentloaded', timeout: 45_000 });
     for (let index = 0; index < posts.length; index += 1) {
-      const composers = await visibleElements(session.page, composerSelector);
+      const composers = await waitForVisibleElements(session.page, composerSelector, index + 1);
       const composer = composers.at(-1);
       if (!composer) throw new XAutoError('THREAD_CONTROL_NOT_FOUND', `找不到 Thread 第 ${index + 1} 条输入框`);
       await composer.click();

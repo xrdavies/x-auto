@@ -8,6 +8,8 @@ import { backupProfile, createProfile, profileStatus, requireAvailableProfile } 
 import { XAutoError } from './core/errors.js';
 import { post } from './actions/post.js';
 import { readThreadFile, thread } from './actions/thread.js';
+import { comment, like, quote, retweet } from './actions/interactions.js';
+import { parseTweetTarget } from './core/targets.js';
 
 const argv = process.argv.slice(2);
 const json = argv.includes('--json');
@@ -95,7 +97,26 @@ const main = async () => {
     writeSuccess(action, await thread({ profileId, handle, file, headed: argv.includes('--headed') }), { json });
     return;
   }
-  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread\n');
+  if (['like', 'retweet', 'comment', 'quote'].includes(group || '')) {
+    const profileId = value('--profile');
+    const handle = value('--handle');
+    const tweet = value('--tweet');
+    const text = value('--text');
+    if (!profileId || !handle || !tweet) throw new XAutoError('INVALID_ARGUMENT', `${group} 需要 --profile、--handle 和 --tweet`);
+    if ((group === 'comment' || group === 'quote') && text === undefined) throw new XAutoError('INVALID_ARGUMENT', `${group} 需要 --text`);
+    if (argv.includes('--dry-run')) {
+      writeSuccess(action, { dryRun: true, target: parseTweetTarget(tweet), ...((group === 'comment' || group === 'quote') ? checkText(text || '') : {}) }, { json });
+      return;
+    }
+    const options = { profileId, handle, tweet, headed: argv.includes('--headed') };
+    const result = group === 'like' ? await like(options)
+      : group === 'retweet' ? await retweet(options)
+        : group === 'comment' ? await comment({ ...options, text: text || '' })
+          : await quote({ ...options, text: text || '' });
+    writeSuccess(action, result, { json });
+    return;
+  }
+  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread | retweet | quote | like | comment\n');
 };
 
 main().catch((error) => writeFailure(action, error, { json }));
