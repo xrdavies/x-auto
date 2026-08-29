@@ -22,7 +22,9 @@ export const ssh = async (host: string, command: string) => {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 255) {
       throw new XAutoError('REMOTE_CONNECTION_FAILED', error instanceof Error ? error.message : String(error));
     }
-    const output = typeof error === 'object' && error !== null && 'stdout' in error ? String(error.stdout) : '';
+    const stdout = typeof error === 'object' && error !== null && 'stdout' in error ? String(error.stdout) : '';
+    const stderr = typeof error === 'object' && error !== null && 'stderr' in error ? String(error.stderr) : '';
+    const output = `${stdout}\n${stderr}`;
     for (const line of output.trim().split('\n').reverse()) {
       try {
         const payload = JSON.parse(line) as { success?: boolean; error?: { code?: string; message?: string; retryable?: boolean; details?: Record<string, unknown> } };
@@ -33,8 +35,7 @@ export const ssh = async (host: string, command: string) => {
         if (parseError instanceof XAutoError) throw parseError;
       }
     }
-    const stderr = typeof error === 'object' && error !== null && 'stderr' in error ? String(error.stderr).trim() : '';
-    throw new XAutoError('REMOTE_COMMAND_FAILED', stderr || (error instanceof Error ? error.message : String(error)));
+    throw new XAutoError('REMOTE_COMMAND_FAILED', stderr.trim() || (error instanceof Error ? error.message : String(error)));
   }
 };
 

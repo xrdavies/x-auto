@@ -64,6 +64,13 @@ export const threadPosts = async ({ profileId, profilePath, handle, texts, heade
       await publishAll.dispose();
       throw new XAutoError('THREAD_CONTROL_NOT_FOUND', `检测到的发布控件不是“全部发布”：${label || '<empty>'}`);
     }
+    const disabled = await publishAll.evaluate((element) => element.getAttribute('aria-disabled') === 'true' || element.hasAttribute('disabled'));
+    if (disabled) {
+      await publishAll.dispose();
+      throw new XAutoError('PUBLISH_FAILED', 'Thread 全部发布控件处于禁用状态，请检查每条内容和页面提示', {
+        details: { posts: posts.length, label },
+      });
+    }
 
     const responses: Array<Promise<string | null>> = [];
     const listener = (response: import('puppeteer-core').HTTPResponse) => {
@@ -82,7 +89,7 @@ export const threadPosts = async ({ profileId, profilePath, handle, texts, heade
     const tweetIds = (await Promise.all(responses)).filter((value): value is string => Boolean(value));
     if (tweetIds.length !== posts.length) {
       throw new XAutoError(tweetIds.length ? 'PARTIAL_THREAD' : 'PUBLISH_UNKNOWN', `Thread 预期 ${posts.length} 条，确认发布 ${tweetIds.length} 条，请人工检查`, {
-        details: { expected: posts.length, publishedTweetIds: tweetIds },
+        details: { expected: posts.length, publishedTweetIds: tweetIds, publishControlLabel: label },
       });
     }
     return { tweetIds, rootUrl: `https://x.com/${session.handle}/status/${tweetIds[0]}` };
