@@ -10,6 +10,8 @@ import { post } from './actions/post.js';
 import { readThreadFile, thread } from './actions/thread.js';
 import { comment, like, quote, retweet } from './actions/interactions.js';
 import { parseTweetTarget } from './core/targets.js';
+import { defaultRemoteHost } from './remote/ssh.js';
+import { remoteAction, remoteCheck, remoteDeploy, remoteInstall, remoteLoginStart, remoteLoginStatus, remoteLoginStop } from './remote/commands.js';
 
 const argv = process.argv.slice(2);
 const json = argv.includes('--json');
@@ -116,7 +118,41 @@ const main = async () => {
     writeSuccess(action, result, { json });
     return;
   }
-  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread | retweet | quote | like | comment\n');
+  if (group === 'remote') {
+    const host = value('--host') || defaultRemoteHost;
+    if (command === 'check') writeSuccess(action, { host, output: await remoteCheck(host) }, { json });
+    else if (command === 'install') {
+      await remoteInstall(host);
+      writeSuccess(action, { host, installed: true }, { json });
+    } else if (command === 'deploy') {
+      await remoteDeploy(host);
+      writeSuccess(action, { host, deployed: true }, { json });
+    } else if (['login-start', 'login-stop', 'status'].includes(command || '')) {
+      const profileId = value('--profile');
+      if (!profileId) throw new XAutoError('INVALID_ARGUMENT', `remote ${command} 需要 --profile`);
+      const output = command === 'login-start' ? await remoteLoginStart(host, profileId)
+        : command === 'login-stop' ? await remoteLoginStop(host, profileId)
+          : await remoteLoginStatus(host, profileId);
+      writeSuccess(action, { host, profile: profileId, output }, { json });
+    } else if (['post', 'thread', 'retweet', 'quote', 'like', 'comment', 'profile-check'].includes(command || '')) {
+      const forwarded: string[] = [command === 'profile-check' ? 'profile' : command || ''];
+      if (command === 'profile-check') forwarded.push('check');
+      let skippedRemote = false;
+      let skippedCommand = false;
+      for (let index = 0; index < argv.length; index += 1) {
+        const arg = argv[index];
+        if (arg === '--') continue;
+        if (!skippedRemote && arg === 'remote') { skippedRemote = true; continue; }
+        if (!skippedCommand && arg === command) { skippedCommand = true; continue; }
+        if (arg === '--host') { index += 1; continue; }
+        forwarded.push(arg);
+      }
+      const output = await remoteAction(host, forwarded);
+      process.stdout.write(`${output}\n`);
+    } else throw new XAutoError('INVALID_ARGUMENT', '未知 remote 命令');
+    return;
+  }
+  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread | retweet | quote | like | comment | remote <command>\n');
 };
 
 main().catch((error) => writeFailure(action, error, { json }));

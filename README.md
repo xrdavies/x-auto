@@ -57,3 +57,16 @@ pnpm dev -- quote --profile rebasecommunity --handle RebaseCommunity --tweet 123
 pnpm dev -- like --profile rebasecommunity --handle RebaseCommunity --tweet 123
 pnpm dev -- comment --profile rebasecommunity --handle RebaseCommunity --tweet 123 --text "reply"
 ```
+
+## Remote Ubuntu
+
+```bash
+pnpm dev -- remote check --host rebase@x-auto.host
+pnpm dev -- remote install --host rebase@x-auto.host
+pnpm dev -- remote deploy --host rebase@x-auto.host
+pnpm dev -- remote login-start --host rebase@x-auto.host --profile rebasecommunity
+pnpm dev -- remote login-stop --host rebase@x-auto.host --profile rebasecommunity
+pnpm dev -- remote post --host rebase@x-auto.host --profile rebasecommunity --handle RebaseCommunity --text "hello"
+```
+
+Remote deployment uses rsync, so the private GitHub repository key is not required on the Ubuntu host. VNC listens only on remote localhost and is accessed through an SSH tunnel.

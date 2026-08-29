@@ -15,7 +15,11 @@ export type XAutoErrorCode =
   | 'ACTION_NOT_AVAILABLE'
   | 'PUBLISH_FAILED'
   | 'PUBLISH_UNKNOWN'
-  | 'PARTIAL_THREAD';
+  | 'PARTIAL_THREAD'
+  | 'REMOTE_CONNECTION_FAILED'
+  | 'REMOTE_DEPENDENCY_MISSING'
+  | 'REMOTE_DEPLOY_FAILED'
+  | 'REMOTE_LOGIN_REQUIRED';
 
 export class XAutoError extends Error {
   readonly code: XAutoErrorCode;
