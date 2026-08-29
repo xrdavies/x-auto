@@ -45,3 +45,17 @@ export const remoteAction = async (host: string, args: string[]) => {
   const command = `export PATH=${remoteNodeDir}:$PATH; export CHROME_PATH=/usr/bin/google-chrome-stable; cd ${remoteDir}; node dist/cli.js ${args.map(shellQuote).join(' ')}`;
   return (await ssh(host, command)).stdout.trim();
 };
+
+export const remoteServiceInstall = async (host: string, profileId: string, handle: string) => {
+  const command = `cd ${remoteDir}; bash scripts/install-user-service.sh ${shellQuote(normalizeProfileId(profileId))} ${shellQuote(handle)}`;
+  return (await ssh(host, command)).stdout.trim();
+};
+
+export const remoteServiceAction = async (host: string, profileId: string, action: string) => {
+  const id = normalizeProfileId(profileId);
+  const unit = `x-auto@${id}.service`;
+  const command = action === 'status'
+    ? `systemctl --user show ${shellQuote(unit)} -p LoadState -p ActiveState -p SubState -p MainPID`
+    : `systemctl --user ${action} ${shellQuote(unit)}`;
+  return (await ssh(host, command)).stdout.trim();
+};

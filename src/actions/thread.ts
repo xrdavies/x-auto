@@ -25,8 +25,9 @@ export const readThreadFile = async (path: string) => {
 
 const composerSelector = '[data-testid="tweetTextarea_0"]';
 
-export const thread = async ({ profileId, handle, file, headed = false }: { profileId: string; handle: string; file: string; headed?: boolean }) => {
-  const posts = await readThreadFile(file);
+export const threadPosts = async ({ profileId, handle, texts, headed = false }: { profileId: string; handle: string; texts: string[]; headed?: boolean }) => {
+  const posts = texts.map((text) => checkText(text));
+  if (posts.length < 2) throw new XAutoError('THREAD_INVALID', 'Thread 至少需要两条推文');
   const profile = await requireAvailableProfile(profileId);
   const session = await openSession(profile.profilePath, handle, !headed);
   try {
@@ -88,4 +89,9 @@ export const thread = async ({ profileId, handle, file, headed = false }: { prof
   } finally {
     await session.browser.close();
   }
+};
+
+export const thread = async ({ profileId, handle, file, headed = false }: { profileId: string; handle: string; file: string; headed?: boolean }) => {
+  const posts = await readThreadFile(file);
+  return threadPosts({ profileId, handle, texts: posts.map((post) => post.text), headed });
 };

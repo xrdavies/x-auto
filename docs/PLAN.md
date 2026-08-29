@@ -6,11 +6,11 @@
 
 ## Phases
 
-1. Profile management, normal Chrome login, session check, and text validation.
-2. Single post and strict X thread publishing. Missing thread controls fail without fallback.
-3. Retweet, quote, like, and comment with structured errors and idempotent state detection.
-4. Ubuntu dependency checks, installation, deployment, VNC login, SSH tunnel, and remote actions.
-5. Unix socket service, systemd user service, runbooks, and end-to-end acceptance.
+1. Profile management, normal Chrome login, session check, and text validation: implemented.
+2. Single post and strict X thread publishing: implemented; missing controls fail without fallback.
+3. Retweet, quote, like, and comment with structured errors and idempotent state detection: implemented.
+4. Ubuntu dependency checks, installation, deployment, VNC login, SSH tunnel, and remote actions: implemented.
+5. Unix socket service, systemd user service, runbooks, and end-to-end acceptance: implementation complete; authenticated action acceptance remains operator-driven.
 
 ## Runtime Decisions
 

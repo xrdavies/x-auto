@@ -11,7 +11,9 @@ import { readThreadFile, thread } from './actions/thread.js';
 import { comment, like, quote, retweet } from './actions/interactions.js';
 import { parseTweetTarget } from './core/targets.js';
 import { defaultRemoteHost } from './remote/ssh.js';
-import { remoteAction, remoteCheck, remoteDeploy, remoteInstall, remoteLoginStart, remoteLoginStatus, remoteLoginStop } from './remote/commands.js';
+import { remoteAction, remoteCheck, remoteDeploy, remoteInstall, remoteLoginStart, remoteLoginStatus, remoteLoginStop, remoteServiceAction, remoteServiceInstall } from './remote/commands.js';
+import { startServer } from './server.js';
+import { paths } from './core/paths.js';
 
 const argv = process.argv.slice(2);
 const json = argv.includes('--json');
@@ -118,6 +120,19 @@ const main = async () => {
     writeSuccess(action, result, { json });
     return;
   }
+  if (group === 'serve') {
+    const profileId = value('--profile');
+    const handle = value('--handle');
+    if (!profileId || !handle) throw new XAutoError('INVALID_ARGUMENT', 'serve 需要 --profile 和 --handle');
+    const socketPath = value('--socket') || `${paths.state()}/${profileId}.sock`;
+    const server = await startServer({ profileId, handle, socketPath });
+    writeSuccess(action, { profile: profileId, socketPath }, { json });
+    const shutdown = () => server.close(() => process.exit(0));
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+    await new Promise(() => undefined);
+    return;
+  }
   if (group === 'remote') {
     const host = value('--host') || defaultRemoteHost;
     if (command === 'check') writeSuccess(action, { host, output: await remoteCheck(host) }, { json });
@@ -134,6 +149,15 @@ const main = async () => {
         : command === 'login-stop' ? await remoteLoginStop(host, profileId)
           : await remoteLoginStatus(host, profileId);
       writeSuccess(action, { host, profile: profileId, output }, { json });
+    } else if (command === 'service-install') {
+      const profileId = value('--profile');
+      const handle = value('--handle');
+      if (!profileId || !handle) throw new XAutoError('INVALID_ARGUMENT', 'remote service-install 需要 --profile 和 --handle');
+      writeSuccess(action, { host, profile: profileId, output: await remoteServiceInstall(host, profileId, handle) }, { json });
+    } else if (['service-start', 'service-stop', 'service-status'].includes(command || '')) {
+      const profileId = value('--profile');
+      if (!profileId) throw new XAutoError('INVALID_ARGUMENT', `remote ${command} 需要 --profile`);
+      writeSuccess(action, { host, profile: profileId, output: await remoteServiceAction(host, profileId, command.replace('service-', '')) }, { json });
     } else if (['post', 'thread', 'retweet', 'quote', 'like', 'comment', 'profile-check'].includes(command || '')) {
       const forwarded: string[] = [command === 'profile-check' ? 'profile' : command || ''];
       if (command === 'profile-check') forwarded.push('check');
@@ -152,7 +176,7 @@ const main = async () => {
     } else throw new XAutoError('INVALID_ARGUMENT', '未知 remote 命令');
     return;
   }
-  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread | retweet | quote | like | comment | remote <command>\n');
+  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread | retweet | quote | like | comment | serve | remote <command>\n');
 };
 
 main().catch((error) => writeFailure(action, error, { json }));

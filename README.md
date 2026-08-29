@@ -2,6 +2,8 @@
 
 Reusable X browser automation built on normal Chrome profiles and `@agent-infra/browser`.
 
+See [Runbook](docs/RUNBOOK.md), [Unix Socket API](docs/SOCKET-API.md), and [Implementation Plan](docs/PLAN.md).
+
 Initial scope:
 
 - macOS profile creation, manual login, and session checks
@@ -70,3 +72,13 @@ pnpm dev -- remote post --host rebase@x-auto.host --profile rebasecommunity --ha
 ```
 
 Remote deployment uses rsync, so the private GitHub repository key is not required on the Ubuntu host. VNC listens only on remote localhost and is accessed through an SSH tunnel.
+
+## Unix Socket Service
+
+```bash
+pnpm dev -- serve --profile rebasecommunity --handle RebaseCommunity --socket ~/.x-auto/state/rebasecommunity.sock
+pnpm dev -- remote service-install --host rebase@x-auto.host --profile rebasecommunity --handle RebaseCommunity
+pnpm dev -- remote service-start --host rebase@x-auto.host --profile rebasecommunity
+pnpm dev -- remote service-status --host rebase@x-auto.host --profile rebasecommunity
+pnpm dev -- remote service-stop --host rebase@x-auto.host --profile rebasecommunity
+```

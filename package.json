@@ -10,7 +10,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test src/tests/*.test.ts",
-    "dev": "tsx src/cli.ts"
+    "dev": "tsx src/cli.ts",
+    "serve": "node dist/server.js"
   },
   "engines": {
     "node": ">=24"

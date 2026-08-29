@@ -18,13 +18,16 @@ export const openNormalChromeLogin = async (profilePath: string) => {
 
 export const launchAutomatedChrome = async (profilePath: string, headless = true) => {
   try {
+    const executablePath = process.env.CHROME_PATH || (process.platform === 'darwin' ? macChromePath : '/usr/bin/google-chrome-stable');
+    const ignoreDefaultArgs = ['--enable-automation'];
+    if (process.platform === 'darwin') ignoreDefaultArgs.push('--password-store=basic', '--use-mock-keychain');
     return await Browser.create({
       launchOrConnect: {
         headless,
         userDataDir: profilePath,
-        executablePath: process.env.CHROME_PATH || macChromePath,
+        executablePath,
         args: ['--start-maximized', '--disable-blink-features=AutomationControlled'],
-        ignoreDefaultArgs: ['--enable-automation', '--password-store=basic', '--use-mock-keychain'],
+        ignoreDefaultArgs,
       },
     });
   } catch (error) {
