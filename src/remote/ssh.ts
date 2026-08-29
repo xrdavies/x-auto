@@ -9,7 +9,7 @@ import { promisify } from 'node:util';
 import { XAutoError } from '../core/errors.js';
 
 const execFileAsync = promisify(execFile);
-export const defaultRemoteHost = process.env.X_AUTO_REMOTE_HOST || 'rebase@x-auto.host';
+export const defaultRemoteHost = process.env.X_AUTO_REMOTE_HOST || '';
 export const remoteDir = '~/x-auto';
 export const remoteNodeDir = '~/.local/node-v24.15.0-linux-x64/bin';
 

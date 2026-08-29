@@ -34,18 +34,18 @@ pnpm build
 ## Profile Commands
 
 ```bash
-pnpm dev -- profile create rebasecommunity
-pnpm dev -- profile login rebasecommunity
-pnpm dev -- profile check rebasecommunity --handle RebaseCommunity
-pnpm dev -- profile status rebasecommunity
-pnpm dev -- profile backup rebasecommunity
+pnpm dev -- profile create <profile-id>
+pnpm dev -- profile login <profile-id>
+pnpm dev -- profile check <profile-id> --handle <x-handle>
+pnpm dev -- profile status <profile-id>
+pnpm dev -- profile backup <profile-id>
 ```
 
 Use an existing Chrome user data directory without copying it:
 
 ```bash
-pnpm dev -- profile check --profile-path /absolute/path/to/profile --handle RebaseCommunity
-pnpm dev -- post --profile-path /absolute/path/to/profile --handle RebaseCommunity --text "hello"
+pnpm dev -- profile check --profile-path /absolute/path/to/profile --handle <x-handle>
+pnpm dev -- post --profile-path /absolute/path/to/profile --handle <x-handle> --text "hello"
 ```
 
 `--profile` and `--profile-path` are mutually exclusive. Explicit paths must be absolute.
@@ -54,8 +54,8 @@ pnpm dev -- post --profile-path /absolute/path/to/profile --handle RebaseCommuni
 
 ```bash
 pnpm dev -- text check --text "hello" --json
-pnpm dev -- post --profile rebasecommunity --handle RebaseCommunity --text "hello"
-pnpm dev -- thread --profile rebasecommunity --handle RebaseCommunity --file thread.jsonl
+pnpm dev -- post --profile <profile-id> --handle <x-handle> --text "hello"
+pnpm dev -- thread --profile <profile-id> --handle <x-handle> --file thread.jsonl
 ```
 
 Use `--dry-run` to validate all text without opening Chrome. Thread publishing requires X's add-post and publish-all controls; missing controls fail and never fall back to independent posts.
@@ -63,21 +63,21 @@ Use `--dry-run` to validate all text without opening Chrome. Thread publishing r
 ## Interactions
 
 ```bash
-pnpm dev -- retweet --profile rebasecommunity --handle RebaseCommunity --tweet https://x.com/user/status/123
-pnpm dev -- quote --profile rebasecommunity --handle RebaseCommunity --tweet 123 --text "quote"
-pnpm dev -- like --profile rebasecommunity --handle RebaseCommunity --tweet 123
-pnpm dev -- comment --profile rebasecommunity --handle RebaseCommunity --tweet 123 --text "reply"
+pnpm dev -- retweet --profile <profile-id> --handle <x-handle> --tweet https://x.com/user/status/123
+pnpm dev -- quote --profile <profile-id> --handle <x-handle> --tweet 123 --text "quote"
+pnpm dev -- like --profile <profile-id> --handle <x-handle> --tweet 123
+pnpm dev -- comment --profile <profile-id> --handle <x-handle> --tweet 123 --text "reply"
 ```
 
 ## Remote Ubuntu
 
 ```bash
-pnpm dev -- remote check --host rebase@x-auto.host
-pnpm dev -- remote install --host rebase@x-auto.host
-pnpm dev -- remote deploy --host rebase@x-auto.host
-pnpm dev -- remote login-start --host rebase@x-auto.host --profile rebasecommunity
-pnpm dev -- remote login-stop --host rebase@x-auto.host --profile rebasecommunity
-pnpm dev -- remote post --host rebase@x-auto.host --profile rebasecommunity --handle RebaseCommunity --text "hello"
+pnpm dev -- remote check --host <ssh-user>@<remote-host>
+pnpm dev -- remote install --host <ssh-user>@<remote-host>
+pnpm dev -- remote deploy --host <ssh-user>@<remote-host>
+pnpm dev -- remote login-start --host <ssh-user>@<remote-host> --profile <profile-id>
+pnpm dev -- remote login-stop --host <ssh-user>@<remote-host> --profile <profile-id>
+pnpm dev -- remote post --host <ssh-user>@<remote-host> --profile <profile-id> --handle <x-handle> --text "hello"
 ```
 
 Remote deployment uses rsync, so the private GitHub repository key is not required on the Ubuntu host. VNC listens only on remote localhost and is accessed through an SSH tunnel.
@@ -85,9 +85,9 @@ Remote deployment uses rsync, so the private GitHub repository key is not requir
 ## Unix Socket Service
 
 ```bash
-pnpm dev -- serve --profile rebasecommunity --handle RebaseCommunity --socket ~/.x-auto/state/rebasecommunity.sock
-pnpm dev -- remote service-install --host rebase@x-auto.host --profile rebasecommunity --handle RebaseCommunity
-pnpm dev -- remote service-start --host rebase@x-auto.host --profile rebasecommunity
-pnpm dev -- remote service-status --host rebase@x-auto.host --profile rebasecommunity
-pnpm dev -- remote service-stop --host rebase@x-auto.host --profile rebasecommunity
+pnpm dev -- serve --profile <profile-id> --handle <x-handle> --socket ~/.x-auto/state/<profile-id>.sock
+pnpm dev -- remote service-install --host <ssh-user>@<remote-host> --profile <profile-id> --handle <x-handle>
+pnpm dev -- remote service-start --host <ssh-user>@<remote-host> --profile <profile-id>
+pnpm dev -- remote service-status --host <ssh-user>@<remote-host> --profile <profile-id>
+pnpm dev -- remote service-stop --host <ssh-user>@<remote-host> --profile <profile-id>
 ```

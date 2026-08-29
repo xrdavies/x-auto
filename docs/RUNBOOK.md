@@ -22,8 +22,8 @@ pnpm build
 Create and open a profile in normal Chrome:
 
 ```bash
-node dist/cli.js profile create rebasecommunity
-node dist/cli.js profile login rebasecommunity
+node dist/cli.js profile create <profile-id>
+node dist/cli.js profile login <profile-id>
 ```
 
 Complete authentication manually, verify that Chrome reaches `https://x.com/home`, and close the entire Chrome window normally. Do not log in through an automated Chrome instance or a Chrome remote-debugging session.
@@ -31,9 +31,9 @@ Complete authentication manually, verify that Chrome reaches `https://x.com/home
 Check and back up the profile:
 
 ```bash
-node dist/cli.js profile check rebasecommunity --handle RebaseCommunity
-node dist/cli.js profile status rebasecommunity
-node dist/cli.js profile backup rebasecommunity
+node dist/cli.js profile check <profile-id> --handle <x-handle>
+node dist/cli.js profile status <profile-id>
+node dist/cli.js profile backup <profile-id>
 ```
 
 Only one Chrome process may use a profile at a time. Commands fail with `PROFILE_IN_USE` when the selected profile is already open.
@@ -45,11 +45,11 @@ CLI actions can use an existing Chrome user data directory directly:
 ```bash
 node dist/cli.js profile check \
   --profile-path /absolute/path/to/profile \
-  --handle RebaseCommunity
+  --handle <x-handle>
 
 node dist/cli.js post \
   --profile-path /absolute/path/to/profile \
-  --handle RebaseCommunity \
+  --handle <x-handle> \
   --text "hello"
 ```
 
@@ -59,9 +59,9 @@ Remote CLI forwarding supports the same selector:
 
 ```bash
 node dist/cli.js remote profile-check \
-  --host rebase@x-auto.host \
-  --profile-path /home/rebase/.local/share/rebase-x-profile \
-  --handle RebaseCommunity
+  --host <ssh-user>@<remote-host> \
+  --profile-path /absolute/path/to/chrome-profile \
+  --handle <x-handle>
 ```
 
 Remote VNC login sessions and systemd user services deliberately require managed Profile IDs. Use `--profile-path` for maintenance checks and one-shot actions, not long-running service configuration.
@@ -78,8 +78,8 @@ Validation uses `twitter-text` weighted length rules. `x-auto` never summarizes,
 
 ```bash
 node dist/cli.js post \
-  --profile rebasecommunity \
-  --handle RebaseCommunity \
+  --profile <profile-id> \
+  --handle <x-handle> \
   --text "hello"
 ```
 
@@ -99,8 +99,8 @@ Publish:
 
 ```bash
 node dist/cli.js thread \
-  --profile rebasecommunity \
-  --handle RebaseCommunity \
+  --profile <profile-id> \
+  --handle <x-handle> \
   --file thread.jsonl
 ```
 
@@ -109,28 +109,28 @@ All posts are validated before Chrome launches. The implementation requires X's 
 ## Interactions
 
 ```bash
-node dist/cli.js like --profile rebasecommunity --handle RebaseCommunity --tweet 123
-node dist/cli.js retweet --profile rebasecommunity --handle RebaseCommunity --tweet https://x.com/user/status/123
-node dist/cli.js quote --profile rebasecommunity --handle RebaseCommunity --tweet 123 --text "quote"
-node dist/cli.js comment --profile rebasecommunity --handle RebaseCommunity --tweet 123 --text "reply"
+node dist/cli.js like --profile <profile-id> --handle <x-handle> --tweet 123
+node dist/cli.js retweet --profile <profile-id> --handle <x-handle> --tweet https://x.com/user/status/123
+node dist/cli.js quote --profile <profile-id> --handle <x-handle> --tweet 123 --text "quote"
+node dist/cli.js comment --profile <profile-id> --handle <x-handle> --tweet 123 --text "reply"
 ```
 
 Like and retweet are idempotent based on the visible X action state. Quote and comment must return the created tweet id.
 
 ## Remote Installation
 
-Default test host:
+Remote host placeholder:
 
 ```text
-rebase@x-auto.host
+<ssh-user>@<remote-host>
 ```
 
 Check, install dependencies, and deploy:
 
 ```bash
-node dist/cli.js remote check --host rebase@x-auto.host
-node dist/cli.js remote install --host rebase@x-auto.host
-node dist/cli.js remote deploy --host rebase@x-auto.host
+node dist/cli.js remote check --host <ssh-user>@<remote-host>
+node dist/cli.js remote install --host <ssh-user>@<remote-host>
+node dist/cli.js remote deploy --host <ssh-user>@<remote-host>
 ```
 
 Installation is limited to x-auto prerequisites: Node.js 24.15.0, pnpm 10.34.1, Chrome Stable, Xvfb, x11vnc, x11-utils, curl, OpenSSL, and rsync. Deployment uses rsync and does not require the private GitHub key on the server.
@@ -139,8 +139,8 @@ Installation is limited to x-auto prerequisites: Node.js 24.15.0, pnpm 10.34.1, 
 
 ```bash
 node dist/cli.js remote login-start \
-  --host rebase@x-auto.host \
-  --profile rebasecommunity
+  --host <ssh-user>@<remote-host> \
+  --profile <profile-id>
 ```
 
 The command prints a one-time VNC password, creates an SSH tunnel, and opens macOS Screen Sharing at `vnc://127.0.0.1:5907`. The remote VNC server listens only on remote localhost.
@@ -149,8 +149,8 @@ After manual login reaches X home:
 
 ```bash
 node dist/cli.js remote login-stop \
-  --host rebase@x-auto.host \
-  --profile rebasecommunity
+  --host <ssh-user>@<remote-host> \
+  --profile <profile-id>
 ```
 
 This closes Chrome, creates a timestamped profile backup, stops VNC/Xvfb, and closes the SSH tunnel.
@@ -161,9 +161,9 @@ Prefix local actions with `remote` and supply the host:
 
 ```bash
 node dist/cli.js remote post \
-  --host rebase@x-auto.host \
-  --profile rebasecommunity \
-  --handle RebaseCommunity \
+  --host <ssh-user>@<remote-host> \
+  --profile <profile-id> \
+  --handle <x-handle> \
   --text "remote post"
 ```
 
@@ -175,9 +175,9 @@ Local foreground service:
 
 ```bash
 node dist/cli.js serve \
-  --profile rebasecommunity \
-  --handle RebaseCommunity \
-  --socket ~/.x-auto/state/rebasecommunity.sock
+  --profile <profile-id> \
+  --handle <x-handle> \
+  --socket ~/.x-auto/state/<profile-id>.sock
 ```
 
 A foreground service can also use `--profile-path /absolute/path`. The systemd installation workflow continues to use managed Profile IDs.
@@ -185,10 +185,10 @@ A foreground service can also use `--profile-path /absolute/path`. The systemd i
 Remote systemd user service:
 
 ```bash
-node dist/cli.js remote service-install --host rebase@x-auto.host --profile rebasecommunity --handle RebaseCommunity
-node dist/cli.js remote service-start --host rebase@x-auto.host --profile rebasecommunity
-node dist/cli.js remote service-status --host rebase@x-auto.host --profile rebasecommunity
-node dist/cli.js remote service-stop --host rebase@x-auto.host --profile rebasecommunity
+node dist/cli.js remote service-install --host <ssh-user>@<remote-host> --profile <profile-id> --handle <x-handle>
+node dist/cli.js remote service-start --host <ssh-user>@<remote-host> --profile <profile-id>
+node dist/cli.js remote service-status --host <ssh-user>@<remote-host> --profile <profile-id>
+node dist/cli.js remote service-stop --host <ssh-user>@<remote-host> --profile <profile-id>
 ```
 
 The Unix socket mode is `0600`. Actions for one profile are serialized. Action logs are stored under `~/.x-auto/state` without post text, cookie values, passwords, or request headers.

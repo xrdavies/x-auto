@@ -136,6 +136,7 @@ const main = async () => {
   }
   if (group === 'remote') {
     const host = value('--host') || defaultRemoteHost;
+    if (!host) throw new XAutoError('INVALID_ARGUMENT', 'remote 命令需要 --host 或 X_AUTO_REMOTE_HOST');
     if (command === 'check') writeSuccess(action, { host, output: await remoteCheck(host) }, { json });
     else if (command === 'install') {
       await remoteInstall(host);
