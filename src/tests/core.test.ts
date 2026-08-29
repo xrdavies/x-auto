@@ -5,6 +5,7 @@ import test from 'node:test';
 import { XAutoError } from '../core/errors.js';
 import { countCharacters, checkText, maxPostCharacters } from '../core/text.js';
 import { normalizeHandle, normalizeProfileId, requireSelectedProfile } from '../core/profiles.js';
+import { normalizePackageVersion, normalizeRemoteSource } from '../remote/commands.js';
 
 test('counts Unicode code points', () => assert.equal(countCharacters('中文ab'), 4));
 test('accepts valid text', () => assert.equal(checkText(' hello ').text, 'hello'));
@@ -22,4 +23,11 @@ test('accepts an explicit absolute profile path', () => {
 test('requires exactly one profile selector', () => {
   assert.throws(() => requireSelectedProfile({}), XAutoError);
   assert.throws(() => requireSelectedProfile({ profileId: 'a', profilePath: tmpdir() }), XAutoError);
+});
+test('validates remote sources and exact package versions', () => {
+  assert.equal(normalizeRemoteSource(), 'source');
+  assert.equal(normalizeRemoteSource('npm'), 'npm');
+  assert.equal(normalizePackageVersion('0.1.0'), '0.1.0');
+  assert.throws(() => normalizeRemoteSource('github'), XAutoError);
+  assert.throws(() => normalizePackageVersion('latest'), XAutoError);
 });

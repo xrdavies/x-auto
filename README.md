@@ -121,6 +121,8 @@ pnpm dev -- comment --profile <profile-id> --handle <x-handle> --tweet 123 --tex
 
 ## Remote Ubuntu
 
+Development deployment keeps the existing source-sync workflow:
+
 ```bash
 pnpm dev -- remote check --host <ssh-user>@<remote-host>
 pnpm dev -- remote install --host <ssh-user>@<remote-host>
@@ -132,12 +134,50 @@ pnpm dev -- remote post --host <ssh-user>@<remote-host> --profile <profile-id> -
 
 Remote deployment uses rsync, so the private GitHub repository key is not required on the Ubuntu host. VNC listens only on remote localhost and is accessed through an SSH tunnel.
 
+Production installations use an exact public npm version. Run this command from a local x-auto checkout or an installed x-auto CLI:
+
+```bash
+pnpm dev -- remote package-install \
+  --host <ssh-user>@<remote-host> \
+  --version 0.1.0
+```
+
+The package is installed under `~/.local/x-auto/releases/<version>` and `~/.local/x-auto/current` is switched to that version. This path is separate from the development checkout at `~/x-auto`; npm installation does not build from source.
+
+Use `--source npm` for remote one-shot actions, login recovery, and service installation after the package is installed:
+
+```bash
+pnpm dev -- remote profile-check \
+  --host <ssh-user>@<remote-host> \
+  --source npm \
+  --profile <profile-id> \
+  --handle <x-handle>
+
+pnpm dev -- remote post \
+  --host <ssh-user>@<remote-host> \
+  --source npm \
+  --profile <profile-id> \
+  --handle <x-handle> \
+  --text "hello"
+```
+
+`--source source` is the default and uses `~/x-auto`. The npm source uses `~/.local/x-auto/current`.
+
+After installing a newer npm version, restart each affected service so it loads the new package:
+
+```bash
+pnpm dev -- remote package-install --host <ssh-user>@<remote-host> --version 0.2.0
+pnpm dev -- remote service-restart --host <ssh-user>@<remote-host> --profile <profile-id>
+```
+
 ## Unix Socket Service
 
 ```bash
 pnpm dev -- serve --profile <profile-id> --handle <x-handle> --socket ~/.x-auto/state/<profile-id>.sock
 pnpm dev -- remote service-install --host <ssh-user>@<remote-host> --profile <profile-id> --handle <x-handle>
+pnpm dev -- remote service-install --host <ssh-user>@<remote-host> --source npm --profile <profile-id> --handle <x-handle>
 pnpm dev -- remote service-start --host <ssh-user>@<remote-host> --profile <profile-id>
+pnpm dev -- remote service-restart --host <ssh-user>@<remote-host> --profile <profile-id>
 pnpm dev -- remote service-status --host <ssh-user>@<remote-host> --profile <profile-id>
 pnpm dev -- remote service-stop --host <ssh-user>@<remote-host> --profile <profile-id>
 ```

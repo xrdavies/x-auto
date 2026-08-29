@@ -12,6 +12,7 @@ const execFileAsync = promisify(execFile);
 export const defaultRemoteHost = process.env.X_AUTO_REMOTE_HOST || '';
 export const remoteDir = '~/x-auto';
 export const remoteNodeDir = '~/.local/node-v24.15.0-linux-x64/bin';
+export const remoteNpmCurrentDir = '$HOME/.local/x-auto/current';
 
 export const shellQuote = (value: string) => `'${value.replaceAll("'", `'"'"'`)}'`;
 
@@ -48,6 +49,9 @@ export const sshWithInput = async (host: string, command: string, input: string)
 
 export const deploy = async (host: string) => {
   const repository = resolve(import.meta.dirname, '../..');
+  if (!existsSync(resolve(repository, 'src')) || !existsSync(resolve(repository, 'tsconfig.json'))) {
+    throw new XAutoError('INVALID_ARGUMENT', '源码部署需要 x-auto 源码仓库；npm 安装请使用 remote package-install');
+  }
   await ssh(host, `mkdir -p ${remoteDir}`);
   try {
     await execFileAsync('rsync', ['-az', '--exclude', '.git/', '--exclude', 'node_modules/', '--exclude', 'dist/', '--exclude', '.x-auto/', `${repository}/`, `${host}:${remoteDir}/`]);

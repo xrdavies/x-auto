@@ -11,6 +11,7 @@
 3. Retweet, quote, like, and comment with structured errors and idempotent state detection: implemented.
 4. Ubuntu dependency checks, installation, deployment, VNC login, SSH tunnel, and remote actions: implemented.
 5. Unix socket service, systemd user service, runbooks, and end-to-end acceptance: implementation complete; authenticated action acceptance remains operator-driven.
+6. Separate source-sync development deployment from exact-version npm production installation: implemented.
 
 ## Runtime Decisions
 
@@ -20,6 +21,7 @@
 - `@agent-infra/browser` and Google Chrome profiles
 - macOS-only local automation
 - Ubuntu remote automation
+- source rsync deployment for development; exact-version npm installation for production
 - text only in the first release
 - no summarization, truncation, or automatic thread splitting
 - structured error codes and non-zero exits

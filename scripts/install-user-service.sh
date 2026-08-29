@@ -4,16 +4,23 @@ set -euo pipefail
 
 profile_id="${1:-}"
 handle="${2:-}"
+source="${3:-source}"
 [[ "$profile_id" =~ ^[a-z0-9][a-z0-9_-]{0,63}$ ]] || { echo 'invalid profile id' >&2; exit 1; }
 [[ "$handle" =~ ^@?[A-Za-z0-9_]{1,15}$ ]] || { echo 'invalid X handle' >&2; exit 1; }
+[[ "$source" == source || "$source" == npm ]] || { echo 'invalid source' >&2; exit 1; }
 
-repo_dir="${X_AUTO_REPO_DIR:-$HOME/x-auto}"
+if [[ "$source" == npm ]]; then
+  repo_dir="${X_AUTO_PACKAGE_DIR:-$HOME/.local/x-auto/current}"
+else
+  repo_dir="${X_AUTO_REPO_DIR:-$HOME/x-auto}"
+fi
 node_dir="${X_AUTO_NODE_DIR:-$HOME/.local/node-v24.15.0-linux-x64/bin}"
 config_dir="$HOME/.config/x-auto"
 unit_dir="$HOME/.config/systemd/user"
 socket_path="$HOME/.x-auto/state/${profile_id}.sock"
 mkdir -p "$config_dir" "$unit_dir"
 chmod 700 "$config_dir"
+[[ -f "$repo_dir/dist/server.js" ]] || { echo "x-auto runtime not found: $repo_dir" >&2; exit 1; }
 
 cat >"$config_dir/${profile_id}.env" <<EOF
 X_AUTO_PROFILE=$profile_id

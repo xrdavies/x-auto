@@ -19,10 +19,7 @@
     "dist",
     "docs",
     "examples",
-    "scripts",
-    "src",
-    "pnpm-lock.yaml",
-    "tsconfig.json"
+    "scripts"
   ],
   "type": "module",
   "exports": {

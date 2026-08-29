@@ -148,21 +148,58 @@ Remote host placeholder:
 <ssh-user>@<remote-host>
 ```
 
-Check, install dependencies, and deploy:
+Check and install operating-system dependencies:
 
 ```bash
 node dist/cli.js remote check --host <ssh-user>@<remote-host>
 node dist/cli.js remote install --host <ssh-user>@<remote-host>
+```
+
+### Development Source Deployment
+
+Use source deployment while developing or testing changes:
+
+```bash
 node dist/cli.js remote deploy --host <ssh-user>@<remote-host>
 ```
 
-Installation is limited to x-auto prerequisites: Node.js 24.15.0, pnpm 10.34.1, Chrome Stable, Xvfb, x11vnc, x11-utils, curl, OpenSSL, and rsync. Deployment uses rsync and does not require the private GitHub key on the server.
+This synchronizes the local source tree to `~/x-auto`, excludes `dist`, then installs dependencies and builds on the remote host. It requires a local x-auto source checkout and does not require the private GitHub repository key on the Ubuntu host.
+
+### Production npm Installation
+
+Install a published exact version for normal use:
+
+```bash
+node dist/cli.js remote package-install \
+  --host <ssh-user>@<remote-host> \
+  --version 0.1.0
+```
+
+The package is installed with `npm --omit=dev` under `~/.local/x-auto/releases/0.1.0`; `~/.local/x-auto/current` points to the active package. npm installation does not compile the source repository. The remote host still needs the prerequisites from `remote install`, including Node.js 24 and Chrome Stable.
+
+To upgrade an npm-managed service, install the new exact version and restart the unit:
+
+```bash
+node dist/cli.js remote package-install --host <ssh-user>@<remote-host> --version 0.2.0
+node dist/cli.js remote service-restart --host <ssh-user>@<remote-host> --profile <profile-id>
+```
+
+The previous release remains under `~/.local/x-auto/releases` and can be selected again with `remote package-install` if rollback is needed.
 
 ## Remote Login With VNC
 
 ```bash
 node dist/cli.js remote login-start \
   --host <ssh-user>@<remote-host> \
+  --profile <profile-id>
+```
+
+For an npm installation, add `--source npm` to use `~/.local/x-auto/current`:
+
+```bash
+node dist/cli.js remote login-start \
+  --host <ssh-user>@<remote-host> \
+  --source npm \
   --profile <profile-id>
 ```
 
@@ -190,7 +227,7 @@ node dist/cli.js remote post \
   --text "remote post"
 ```
 
-The same applies to `thread`, `retweet`, `quote`, `like`, `comment`, and `profile-check`.
+For a published npm version, add `--source npm` to remote actions. The same option applies to `thread`, `retweet`, `quote`, `like`, `comment`, and `profile-check`.
 
 For `remote thread`, `--file` points to a local JSONL file. x-auto uploads it to a private remote temporary directory and removes it after the action finishes.
 
@@ -211,7 +248,9 @@ Remote systemd user service:
 
 ```bash
 node dist/cli.js remote service-install --host <ssh-user>@<remote-host> --profile <profile-id> --handle <x-handle>
+node dist/cli.js remote service-install --host <ssh-user>@<remote-host> --source npm --profile <profile-id> --handle <x-handle>
 node dist/cli.js remote service-start --host <ssh-user>@<remote-host> --profile <profile-id>
+node dist/cli.js remote service-restart --host <ssh-user>@<remote-host> --profile <profile-id>
 node dist/cli.js remote service-status --host <ssh-user>@<remote-host> --profile <profile-id>
 node dist/cli.js remote service-stop --host <ssh-user>@<remote-host> --profile <profile-id>
 ```

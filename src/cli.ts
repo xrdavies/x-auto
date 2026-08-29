@@ -11,7 +11,7 @@ import { readThreadFile, thread } from './actions/thread.js';
 import { comment, like, quote, retweet } from './actions/interactions.js';
 import { parseTweetTarget } from './core/targets.js';
 import { defaultRemoteHost } from './remote/ssh.js';
-import { remoteAction, remoteCheck, remoteDeploy, remoteInstall, remoteLoginStart, remoteLoginStatus, remoteLoginStop, remoteServiceAction, remoteServiceInstall, remoteThreadAction } from './remote/commands.js';
+import { normalizePackageVersion, normalizeRemoteSource, remoteAction, remoteCheck, remoteDeploy, remoteInstall, remoteLoginStart, remoteLoginStatus, remoteLoginStop, remotePackageInstall, remoteServiceAction, remoteServiceInstall, remoteThreadAction } from './remote/commands.js';
 import { startServer } from './server.js';
 import { paths } from './core/paths.js';
 
@@ -144,23 +144,31 @@ const main = async () => {
     } else if (command === 'deploy') {
       await remoteDeploy(host);
       writeSuccess(action, { host, deployed: true }, { json });
+    } else if (command === 'package-install') {
+      const version = value('--version');
+      if (!version) throw new XAutoError('INVALID_ARGUMENT', 'remote package-install 需要 --version');
+      const normalizedVersion = normalizePackageVersion(version);
+      writeSuccess(action, { host, version: normalizedVersion, output: await remotePackageInstall(host, normalizedVersion) }, { json });
     } else if (['login-start', 'login-stop', 'status'].includes(command || '')) {
       const profileId = value('--profile');
       if (!profileId) throw new XAutoError('INVALID_ARGUMENT', `remote ${command} 需要 --profile`);
-      const output = command === 'login-start' ? await remoteLoginStart(host, profileId)
-        : command === 'login-stop' ? await remoteLoginStop(host, profileId)
-          : await remoteLoginStatus(host, profileId);
+      const source = normalizeRemoteSource(value('--source'));
+      const output = command === 'login-start' ? await remoteLoginStart(host, profileId, source)
+        : command === 'login-stop' ? await remoteLoginStop(host, profileId, source)
+          : await remoteLoginStatus(host, profileId, source);
       writeSuccess(action, { host, profile: profileId, output }, { json });
     } else if (command === 'service-install') {
       const profileId = value('--profile');
       const handle = value('--handle');
       if (!profileId || !handle) throw new XAutoError('INVALID_ARGUMENT', 'remote service-install 需要 --profile 和 --handle');
-      writeSuccess(action, { host, profile: profileId, output: await remoteServiceInstall(host, profileId, handle) }, { json });
-    } else if (['service-start', 'service-stop', 'service-status'].includes(command || '')) {
+      const source = normalizeRemoteSource(value('--source'));
+      writeSuccess(action, { host, profile: profileId, source, output: await remoteServiceInstall(host, profileId, handle, source) }, { json });
+    } else if (['service-start', 'service-stop', 'service-status', 'service-restart'].includes(command || '')) {
       const profileId = value('--profile');
       if (!profileId) throw new XAutoError('INVALID_ARGUMENT', `remote ${command} 需要 --profile`);
       writeSuccess(action, { host, profile: profileId, output: await remoteServiceAction(host, profileId, command.replace('service-', '')) }, { json });
     } else if (['post', 'thread', 'retweet', 'quote', 'like', 'comment', 'profile-check'].includes(command || '')) {
+      const source = normalizeRemoteSource(value('--source'));
       const forwarded: string[] = [command === 'profile-check' ? 'profile' : command || ''];
       if (command === 'profile-check') forwarded.push('check');
       let skippedRemote = false;
@@ -171,16 +179,17 @@ const main = async () => {
         if (!skippedRemote && arg === 'remote') { skippedRemote = true; continue; }
         if (!skippedCommand && arg === command) { skippedCommand = true; continue; }
         if (arg === '--host') { index += 1; continue; }
+        if (arg === '--source') { index += 1; continue; }
         forwarded.push(arg);
       }
       const output = command === 'thread'
-        ? await remoteThreadAction(host, forwarded, value('--file') || '')
-        : await remoteAction(host, forwarded);
+        ? await remoteThreadAction(host, forwarded, value('--file') || '', source)
+        : await remoteAction(host, forwarded, source);
       process.stdout.write(`${output}\n`);
     } else throw new XAutoError('INVALID_ARGUMENT', '未知 remote 命令');
     return;
   }
-  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread | retweet | quote | like | comment | serve | remote <command>\n');
+  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread | retweet | quote | like | comment | serve | remote <check|install|deploy|package-install|...>\n');
 };
 
 main().catch((error) => writeFailure(action, error, { json }));
