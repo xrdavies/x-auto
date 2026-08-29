@@ -2,6 +2,10 @@
 
 Reusable X browser automation built on normal Chrome profiles and `@agent-infra/browser`.
 
+Public source repository: <https://github.com/xrdavies/x-auto>
+
+The repository is MIT licensed. See [LICENSE](LICENSE).
+
 See [Runbook](docs/RUNBOOK.md), [Unix Socket API](docs/SOCKET-API.md), and [Implementation Plan](docs/PLAN.md).
 
 Initial scope:
@@ -48,6 +52,18 @@ The client only talks to the Unix Socket service; it does not start Chrome or re
 - Node.js 24
 - pnpm 10.34.1
 - Google Chrome Stable
+
+## Quick Start
+
+```bash
+git clone https://github.com/xrdavies/x-auto.git
+cd x-auto
+corepack enable
+pnpm install
+pnpm build
+```
+
+The package is currently marked private for internal distribution. Use the repository as a local or workspace dependency after building it; it is not published to npm.
 
 ## Development
 
