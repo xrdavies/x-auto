@@ -35,7 +35,7 @@ For a Node.js client example, see [`examples/unix-socket-client.mjs`](examples/u
 Internal Node.js applications can import the thin client after `pnpm build`:
 
 ```ts
-import { XAutoClient } from '@teamtaoist/x-auto';
+import { XAutoClient } from '@xrdavies/x-auto';
 
 const x = new XAutoClient({
   socketPath: '/home/app/.x-auto/state/<profile-id>.sock',
@@ -63,7 +63,14 @@ pnpm install
 pnpm build
 ```
 
-The package is currently marked private for internal distribution. Use the repository as a local or workspace dependency after building it; it is not published to npm.
+The package is configured for public npm publication as `@xrdavies/x-auto`. Until the first release is published, use the repository as a local or workspace dependency after building it.
+
+After the first npm release, install the CLI globally or add the client to an application:
+
+```bash
+npm install --global @xrdavies/x-auto
+npm install @xrdavies/x-auto
+```
 
 ## Development
 

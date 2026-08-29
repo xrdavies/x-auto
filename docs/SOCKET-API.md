@@ -15,7 +15,7 @@ Do not mix direct CLI actions or duplicate service instances with the service fo
 The repository includes a thin TypeScript client and a runnable Node.js example at [`examples/unix-socket-client.mjs`](../examples/unix-socket-client.mjs). Import `XAutoClient` from the package after `pnpm build`:
 
 ```ts
-import { XAutoClient } from '@teamtaoist/x-auto';
+import { XAutoClient } from '@xrdavies/x-auto';
 
 const client = new XAutoClient({ socketPath: '/home/app/.x-auto/state/<profile-id>.sock' });
 await client.ready();

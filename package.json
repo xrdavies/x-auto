@@ -1,7 +1,29 @@
 {
-  "name": "@teamtaoist/x-auto",
+  "name": "@xrdavies/x-auto",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "description": "X browser automation using normal Chrome profiles",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xrdavies/x-auto.git"
+  },
+  "homepage": "https://github.com/xrdavies/x-auto#readme",
+  "bugs": {
+    "url": "https://github.com/xrdavies/x-auto/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "examples",
+    "scripts",
+    "src",
+    "pnpm-lock.yaml",
+    "tsconfig.json"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -16,6 +38,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test src/tests/*.test.ts",
+    "prepack": "pnpm build",
+    "prepublishOnly": "pnpm typecheck && pnpm test",
     "dev": "tsx src/cli.ts",
     "serve": "node dist/server.js"
   },
