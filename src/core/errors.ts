@@ -6,8 +6,14 @@ export type XAutoErrorCode =
   | 'ACCOUNT_MISMATCH'
   | 'TEXT_EMPTY'
   | 'TEXT_TOO_LONG'
+  | 'THREAD_INVALID'
+  | 'THREAD_CONTROL_NOT_FOUND'
   | 'BROWSER_LAUNCH_FAILED'
-  | 'BROWSER_NAVIGATION_FAILED';
+  | 'BROWSER_NAVIGATION_FAILED'
+  | 'ACTION_NOT_AVAILABLE'
+  | 'PUBLISH_FAILED'
+  | 'PUBLISH_UNKNOWN'
+  | 'PARTIAL_THREAD';
 
 export class XAutoError extends Error {
   readonly code: XAutoErrorCode;

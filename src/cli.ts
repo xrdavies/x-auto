@@ -6,6 +6,8 @@ import { writeFailure, writeSuccess } from './core/output.js';
 import { checkText } from './core/text.js';
 import { backupProfile, createProfile, profileStatus, requireAvailableProfile } from './core/profiles.js';
 import { XAutoError } from './core/errors.js';
+import { post } from './actions/post.js';
+import { readThreadFile, thread } from './actions/thread.js';
 
 const argv = process.argv.slice(2);
 const json = argv.includes('--json');
@@ -17,7 +19,7 @@ const value = (name: string) => {
 const positional: string[] = [];
 for (let index = 0; index < argv.length; index += 1) {
   const arg = argv[index];
-  if (arg === '--' || arg === '--json' || arg === '--headed') continue;
+  if (arg === '--' || arg === '--json' || arg === '--headed' || arg === '--dry-run') continue;
   if (arg.startsWith('--')) {
     index += 1;
     continue;
@@ -68,7 +70,32 @@ const main = async () => {
     writeSuccess(action, checkText(text), { json });
     return;
   }
-  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check\n');
+  if (group === 'post') {
+    const profileId = value('--profile');
+    const handle = value('--handle');
+    const text = value('--text');
+    if (!profileId || !handle || text === undefined) throw new XAutoError('INVALID_ARGUMENT', 'post 需要 --profile、--handle 和 --text');
+    if (argv.includes('--dry-run')) {
+      writeSuccess(action, { dryRun: true, ...checkText(text) }, { json });
+      return;
+    }
+    writeSuccess(action, await post({ profileId, handle, text, headed: argv.includes('--headed') }), { json });
+    return;
+  }
+  if (group === 'thread') {
+    const profileId = value('--profile');
+    const handle = value('--handle');
+    const file = value('--file');
+    if (!profileId || !handle || !file) throw new XAutoError('INVALID_ARGUMENT', 'thread 需要 --profile、--handle 和 --file');
+    if (argv.includes('--dry-run')) {
+      const posts = await readThreadFile(file);
+      writeSuccess(action, { dryRun: true, posts: posts.map(({ text: _text, ...result }) => result) }, { json });
+      return;
+    }
+    writeSuccess(action, await thread({ profileId, handle, file, headed: argv.includes('--headed') }), { json });
+    return;
+  }
+  process.stdout.write('Usage: x-auto profile <create|login|check|status|backup> | text check | post | thread\n');
 };
 
 main().catch((error) => writeFailure(action, error, { json }));

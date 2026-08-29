@@ -38,3 +38,13 @@ pnpm dev -- profile check rebasecommunity --handle RebaseCommunity
 pnpm dev -- profile status rebasecommunity
 pnpm dev -- profile backup rebasecommunity
 ```
+
+## Text And Publishing
+
+```bash
+pnpm dev -- text check --text "hello" --json
+pnpm dev -- post --profile rebasecommunity --handle RebaseCommunity --text "hello"
+pnpm dev -- thread --profile rebasecommunity --handle RebaseCommunity --file thread.jsonl
+```
+
+Use `--dry-run` to validate all text without opening Chrome. Thread publishing requires X's add-post and publish-all controls; missing controls fail and never fall back to independent posts.

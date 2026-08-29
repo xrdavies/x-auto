@@ -10,7 +10,7 @@ const selectors = [
   '[data-testid="AppTabBar_Profile_Link"]',
 ];
 
-export const checkSession = async (profilePath: string, expectedHandle: string, headless = true) => {
+export const openSession = async (profilePath: string, expectedHandle: string, headless = true) => {
   const handle = normalizeHandle(expectedHandle);
   const browser = await launchAutomatedChrome(profilePath, headless);
   try {
@@ -32,8 +32,18 @@ export const checkSession = async (profilePath: string, expectedHandle: string, 
     const actualHandle = match?.[1]?.toLowerCase();
     if (!actualHandle) throw new XAutoError('SESSION_NOT_AUTHENTICATED', '无法读取当前 X 账号');
     if (actualHandle !== handle) throw new XAutoError('ACCOUNT_MISMATCH', `当前账号是 @${actualHandle}，预期为 @${handle}`);
-    return { handle: actualHandle };
-  } finally {
+    return { browser, page, handle: actualHandle };
+  } catch (error) {
     await browser.close();
+    throw error;
+  }
+};
+
+export const checkSession = async (profilePath: string, expectedHandle: string, headless = true) => {
+  const session = await openSession(profilePath, expectedHandle, headless);
+  try {
+    return { handle: session.handle };
+  } finally {
+    await session.browser.close();
   }
 };
