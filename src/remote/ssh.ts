@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 
-import { XAutoError } from '../core/errors.js';
+import { XAutoError, type XAutoErrorCode } from '../core/errors.js';
 
 const execFileAsync = promisify(execFile);
 export const defaultRemoteHost = process.env.X_AUTO_REMOTE_HOST || '';
@@ -19,7 +19,22 @@ export const ssh = async (host: string, command: string) => {
   try {
     return await execFileAsync('ssh', ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=accept-new', host, command], { maxBuffer: 10 * 1024 * 1024 });
   } catch (error) {
-    throw new XAutoError('REMOTE_CONNECTION_FAILED', error instanceof Error ? error.message : String(error));
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 255) {
+      throw new XAutoError('REMOTE_CONNECTION_FAILED', error instanceof Error ? error.message : String(error));
+    }
+    const output = typeof error === 'object' && error !== null && 'stdout' in error ? String(error.stdout) : '';
+    for (const line of output.trim().split('\n').reverse()) {
+      try {
+        const payload = JSON.parse(line) as { success?: boolean; error?: { code?: string; message?: string; retryable?: boolean; details?: Record<string, unknown> } };
+        if (payload.success === false && payload.error?.code && payload.error.message) {
+          throw new XAutoError(payload.error.code as XAutoErrorCode, payload.error.message, { retryable: payload.error.retryable, details: payload.error.details });
+        }
+      } catch (parseError) {
+        if (parseError instanceof XAutoError) throw parseError;
+      }
+    }
+    const stderr = typeof error === 'object' && error !== null && 'stderr' in error ? String(error.stderr).trim() : '';
+    throw new XAutoError('REMOTE_COMMAND_FAILED', stderr || (error instanceof Error ? error.message : String(error)));
   }
 };
 

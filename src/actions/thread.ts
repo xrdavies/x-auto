@@ -23,7 +23,7 @@ export const readThreadFile = async (path: string) => {
   return posts;
 };
 
-const composerSelector = '[data-testid="tweetTextarea_0"]';
+const composerSelector = '[data-testid^="tweetTextarea_"]';
 
 export const threadPosts = async ({ profileId, profilePath, handle, texts, headed = false }: ProfileSelection & { handle: string; texts: string[]; headed?: boolean }) => {
   const posts = texts.map((text) => checkText(text));
