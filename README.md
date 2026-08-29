@@ -17,6 +17,20 @@ The tool never stores X passwords or cookie values. It stops on login challenges
 
 For a Node.js client example, see [`examples/unix-socket-client.mjs`](examples/unix-socket-client.mjs).
 
+Internal Node.js applications can import the thin client after `pnpm build`:
+
+```ts
+import { XAutoClient } from '@teamtaoist/x-auto';
+
+const x = new XAutoClient({
+  socketPath: '/home/app/.x-auto/state/<profile-id>.sock',
+});
+
+const result = await x.post({ text: '要发布的推文内容' });
+```
+
+The client only talks to the Unix Socket service; it does not start Chrome or read Profile data.
+
 ## Requirements
 
 - macOS for local commands

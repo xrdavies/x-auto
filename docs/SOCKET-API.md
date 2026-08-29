@@ -4,7 +4,17 @@ Start the service with a profile, expected handle, and socket path. All requests
 
 The foreground CLI accepts either `--profile <id>` or `--profile-path <absolute-path>`. The two selectors are mutually exclusive.
 
-The repository includes a Node.js standard-library client template at [`examples/unix-socket-client.mjs`](../examples/unix-socket-client.mjs). It only checks `/ready` by default; copy and enable the action call needed by the integrating application.
+The repository includes a thin TypeScript client and a runnable Node.js example at [`examples/unix-socket-client.mjs`](../examples/unix-socket-client.mjs). Import `XAutoClient` from the package after `pnpm build`:
+
+```ts
+import { XAutoClient } from '@teamtaoist/x-auto';
+
+const client = new XAutoClient({ socketPath: '/home/app/.x-auto/state/<profile-id>.sock' });
+await client.ready();
+await client.post({ text: '要发布的推文内容' });
+```
+
+The client only checks `/ready` when the example is run directly; action calls are commented out to avoid accidental publishing.
 
 The same API can be called with `curl`:
 
