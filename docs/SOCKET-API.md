@@ -104,4 +104,6 @@ Failure:
 }
 ```
 
+`XAutoClient` waits up to 5 minutes by default. On timeout it throws `CLIENT_TIMEOUT` with `retryable: false`; the queued action keeps running on the server and may still publish.
+
 The service never accepts account passwords or cookies and never rewrites supplied text.

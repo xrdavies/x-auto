@@ -85,7 +85,7 @@ export class XAutoClient {
   readonly socketPath: string;
   readonly timeoutMs: number;
 
-  constructor({ socketPath, timeoutMs = 30_000 }: XAutoClientOptions) {
+  constructor({ socketPath, timeoutMs = 300_000 }: XAutoClientOptions) {
     if (!socketPath) throw new TypeError('socketPath 不能为空');
     this.socketPath = socketPath;
     this.timeoutMs = timeoutMs;
@@ -122,7 +122,12 @@ export class XAutoClient {
         });
       });
 
-      request.setTimeout(this.timeoutMs, () => request.destroy(new Error(`x-auto 请求超时：${path}`)));
+      // A client timeout does not cancel the queued server action; it may still publish.
+      request.setTimeout(this.timeoutMs, () => request.destroy(new XAutoClientError({
+        code: 'CLIENT_TIMEOUT',
+        message: `x-auto 请求超时：${path}，服务端操作可能仍在执行或已完成，请人工检查后再决定是否重试`,
+        retryable: false,
+      })));
       request.on('error', reject);
       if (payload !== undefined) request.write(payload);
       request.end();
