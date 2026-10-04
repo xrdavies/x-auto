@@ -61,9 +61,20 @@ export const requireProfile = (profileId: string) => {
   return { id, profilePath };
 };
 
+export const commandUsesProfile = (command: string, profilePath: string) => {
+  const flag = `--user-data-dir=${profilePath}`;
+  let index = command.indexOf(flag);
+  while (index >= 0) {
+    const next = command[index + flag.length];
+    if (next === undefined || next === ' ') return true;
+    index = command.indexOf(flag, index + 1);
+  }
+  return false;
+};
+
 export const isProfileInUse = async (profilePath: string) => {
   const { stdout } = await execFileAsync('ps', ['ax', '-o', 'command=']);
-  return stdout.split('\n').some((command) => command.includes(`--user-data-dir=${profilePath}`));
+  return stdout.split('\n').some((command) => commandUsesProfile(command, profilePath));
 };
 
 export const requireAvailableProfile = async (profileId: string) => {
