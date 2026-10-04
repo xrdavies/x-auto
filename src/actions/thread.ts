@@ -123,7 +123,8 @@ export const threadPosts = async ({ profileId, profilePath, handle, texts, heade
     session.page.on('response', listener);
     await publishAll.click();
     await publishAll.dispose();
-    await delay(15_000);
+    const deadline = Date.now() + 30_000;
+    while (responses.length < posts.length && Date.now() < deadline) await delay(250);
     session.page.off('response', listener);
     const tweetIds = (await Promise.all(responses)).filter((value): value is string => Boolean(value));
     if (tweetIds.length !== posts.length) {
