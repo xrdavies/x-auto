@@ -67,13 +67,14 @@ const findMenuItem = async (page: Page, pattern: RegExp) => {
 
 const publishComposer = async (page: Page, text: string) => {
   const checked = checkText(text);
-  const composer = await waitForVisible(page, ['[data-testid="tweetTextarea_0"]', 'div[contenteditable="true"][role="textbox"]']);
+  // Reply and quote open a modal; scope to it so the inline reply box on the tweet page is never used.
+  const composer = await waitForVisible(page, ['[role="dialog"] [data-testid="tweetTextarea_0"]', '[role="dialog"] div[contenteditable="true"][role="textbox"]']);
   if (!composer) throw new XAutoError('ACTION_NOT_AVAILABLE', '找不到文本输入框');
   await composer.click();
   await composer.type(checked.text, { delay: 10 });
   await composer.dispose();
 
-  const button = await waitForVisible(page, ['[data-testid="tweetButton"]', '[data-testid="tweetButtonInline"]']);
+  const button = await waitForVisible(page, ['[role="dialog"] [data-testid="tweetButton"]', '[role="dialog"] [data-testid="tweetButtonInline"]']);
   if (!button) throw new XAutoError('ACTION_NOT_AVAILABLE', '找不到发布按钮');
   const responsePromise = waitForCreateTweet(page);
   await button.click();
