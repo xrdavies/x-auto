@@ -14,24 +14,12 @@ import { defaultRemoteHost } from './remote/ssh.js';
 import { normalizePackageVersion, normalizeRemoteSource, remoteAction, remoteCheck, remoteDeploy, remoteInstall, remoteLoginStart, remoteLoginStatus, remoteLoginStop, remotePackageInstall, remoteServiceAction, remoteServiceInstall, remoteThreadAction } from './remote/commands.js';
 import { startServer } from './server.js';
 import { paths } from './core/paths.js';
+import { parseArgs } from './core/args.js';
 
 const argv = process.argv.slice(2);
-const json = argv.includes('--json');
-const value = (name: string) => {
-  const index = argv.indexOf(name);
-  return index >= 0 ? argv[index + 1] : undefined;
-};
-
-const positional: string[] = [];
-for (let index = 0; index < argv.length; index += 1) {
-  const arg = argv[index];
-  if (arg === '--' || arg === '--json' || arg === '--headed' || arg === '--dry-run') continue;
-  if (arg.startsWith('--')) {
-    index += 1;
-    continue;
-  }
-  positional.push(arg);
-}
+const args = parseArgs(argv);
+const json = args.has('--json');
+const { value, positional } = args;
 const [group, command, resource] = positional;
 const action = [group, command].filter(Boolean).join(':') || 'help';
 
@@ -43,6 +31,7 @@ const profileSelection = (positionalProfile?: string): ProfileSelection => {
 };
 
 const main = async () => {
+  if (args.errors.length) throw new XAutoError('INVALID_ARGUMENT', args.errors.join('；'));
   if (group === 'profile' && command === 'create') {
     writeSuccess(action, createSelectedProfile(profileSelection(resource)), { json });
     return;
@@ -59,7 +48,7 @@ const main = async () => {
     const handle = value('--handle');
     if (!handle) throw new XAutoError('INVALID_ARGUMENT', 'profile check 需要 --handle');
     const profile = await requireAvailableSelectedProfile(profileSelection(resource));
-    writeSuccess(action, await checkSession(profile.profilePath, handle, !argv.includes('--headed')), { json });
+    writeSuccess(action, await checkSession(profile.profilePath, handle, !args.has('--headed')), { json });
     return;
   }
   if (group === 'profile' && command === 'status') {
@@ -81,11 +70,11 @@ const main = async () => {
     const handle = value('--handle');
     const text = value('--text');
     if (!handle || text === undefined) throw new XAutoError('INVALID_ARGUMENT', 'post 需要 Profile、--handle 和 --text');
-    if (argv.includes('--dry-run')) {
+    if (args.has('--dry-run')) {
       writeSuccess(action, { dryRun: true, ...checkText(text) }, { json });
       return;
     }
-    writeSuccess(action, await post({ ...selection, handle, text, headed: argv.includes('--headed') }), { json });
+    writeSuccess(action, await post({ ...selection, handle, text, headed: args.has('--headed') }), { json });
     return;
   }
   if (group === 'thread') {
@@ -93,12 +82,12 @@ const main = async () => {
     const handle = value('--handle');
     const file = value('--file');
     if (!handle || !file) throw new XAutoError('INVALID_ARGUMENT', 'thread 需要 Profile、--handle 和 --file');
-    if (argv.includes('--dry-run')) {
+    if (args.has('--dry-run')) {
       const posts = await readThreadFile(file);
       writeSuccess(action, { dryRun: true, posts: posts.map(({ text: _text, ...result }) => result) }, { json });
       return;
     }
-    writeSuccess(action, await thread({ ...selection, handle, file, headed: argv.includes('--headed') }), { json });
+    writeSuccess(action, await thread({ ...selection, handle, file, headed: args.has('--headed') }), { json });
     return;
   }
   if (['like', 'retweet', 'comment', 'quote'].includes(group || '')) {
@@ -108,11 +97,11 @@ const main = async () => {
     const text = value('--text');
     if (!handle || !tweet) throw new XAutoError('INVALID_ARGUMENT', `${group} 需要 Profile、--handle 和 --tweet`);
     if ((group === 'comment' || group === 'quote') && text === undefined) throw new XAutoError('INVALID_ARGUMENT', `${group} 需要 --text`);
-    if (argv.includes('--dry-run')) {
+    if (args.has('--dry-run')) {
       writeSuccess(action, { dryRun: true, target: parseTweetTarget(tweet), ...((group === 'comment' || group === 'quote') ? checkText(text || '') : {}) }, { json });
       return;
     }
-    const options = { ...selection, handle, tweet, headed: argv.includes('--headed') };
+    const options = { ...selection, handle, tweet, headed: args.has('--headed') };
     const result = group === 'like' ? await like(options)
       : group === 'retweet' ? await retweet(options)
         : group === 'comment' ? await comment({ ...options, text: text || '' })

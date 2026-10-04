@@ -11,7 +11,16 @@ import { XAutoError, type XAutoErrorCode } from '../core/errors.js';
 const execFileAsync = promisify(execFile);
 export const defaultRemoteHost = process.env.X_AUTO_REMOTE_HOST || '';
 export const remoteDir = '~/x-auto';
-export const remoteNodeDir = '~/.local/node-v24.15.0-linux-x64/bin';
+export const defaultRemoteNodeVersion = '24.15.0';
+
+// Validated on use so a bad value only fails remote commands, not the whole CLI.
+export const remoteNodeVersion = () => {
+  const version = process.env.X_AUTO_REMOTE_NODE_VERSION || defaultRemoteNodeVersion;
+  if (!/^24\.\d+\.\d+$/.test(version)) throw new XAutoError('INVALID_ARGUMENT', 'X_AUTO_REMOTE_NODE_VERSION 必须是 Node 24 的明确版本，例如 24.15.0');
+  return version;
+};
+
+export const remoteNodeDir = () => `$HOME/.local/node-v${remoteNodeVersion()}-linux-x64/bin`;
 export const remoteNpmCurrentDir = '$HOME/.local/x-auto/current';
 
 export const shellQuote = (value: string) => `'${value.replaceAll("'", `'"'"'`)}'`;
@@ -55,7 +64,7 @@ export const deploy = async (host: string) => {
   await ssh(host, `mkdir -p ${remoteDir}`);
   try {
     await execFileAsync('rsync', ['-az', '--exclude', '.git/', '--exclude', 'node_modules/', '--exclude', 'dist/', '--exclude', '.x-auto/', `${repository}/`, `${host}:${remoteDir}/`]);
-    await ssh(host, `export PATH=${remoteNodeDir}:$PATH; cd ${remoteDir}; pnpm install --frozen-lockfile; pnpm build`);
+    await ssh(host, `export PATH=${remoteNodeDir()}:$PATH; cd ${remoteDir}; pnpm install --frozen-lockfile; pnpm build`);
   } catch (error) {
     throw new XAutoError('REMOTE_DEPLOY_FAILED', error instanceof Error ? error.message : String(error));
   }

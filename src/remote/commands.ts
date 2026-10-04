@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { XAutoError } from '../core/errors.js';
 import { normalizeProfileId } from '../core/profiles.js';
-import { defaultRemoteHost, deploy, remoteDir, remoteNodeDir, remoteNpmCurrentDir, removeRemoteFile, shellQuote, ssh, sshWithInput, startTunnel, stopTunnel, uploadThreadFile } from './ssh.js';
+import { defaultRemoteHost, deploy, remoteDir, remoteNodeDir, remoteNodeVersion, remoteNpmCurrentDir, removeRemoteFile, shellQuote, ssh, sshWithInput, startTunnel, stopTunnel, uploadThreadFile } from './ssh.js';
 
 export type RemoteSource = 'source' | 'npm';
 
@@ -27,13 +27,14 @@ const runtimeGuard = (source: RemoteSource) => source === 'npm'
   : '';
 
 export const remoteCheck = async (host = defaultRemoteHost) => {
-  const { stdout } = await ssh(host, 'set -e; . /etc/os-release; printf "os=%s %s\\narch=%s\\nuser=%s\\n" "$ID" "$VERSION_ID" "$(uname -m)" "$(whoami)"; for cmd in google-chrome-stable Xvfb x11vnc xdpyinfo curl rsync openssl; do command -v "$cmd" >/dev/null && echo "$cmd=ok" || echo "$cmd=missing"; done; if [ -x "$HOME/.local/node-v24.15.0-linux-x64/bin/node" ]; then "$HOME/.local/node-v24.15.0-linux-x64/bin/node" -v; else echo node24=missing; fi');
+  const node = `${remoteNodeDir()}/node`;
+  const { stdout } = await ssh(host, `set -e; . /etc/os-release; printf "os=%s %s\\narch=%s\\nuser=%s\\n" "$ID" "$VERSION_ID" "$(uname -m)" "$(whoami)"; for cmd in google-chrome-stable Xvfb x11vnc xdpyinfo curl rsync openssl; do command -v "$cmd" >/dev/null && echo "$cmd=ok" || echo "$cmd=missing"; done; if [ -x "${node}" ]; then "${node}" -v; else echo node${remoteNodeVersion()}=missing; fi`);
   return stdout.trim();
 };
 
 export const remoteInstall = async (host = defaultRemoteHost) => {
   const script = await readFile(new URL('../../scripts/remote-install.sh', import.meta.url), 'utf8');
-  await sshWithInput(host, 'bash -s', script);
+  await sshWithInput(host, `X_AUTO_NODE_VERSION=${shellQuote(remoteNodeVersion())} bash -s`, script);
 };
 
 export const remoteDeploy = (host = defaultRemoteHost) => deploy(host);
@@ -41,7 +42,7 @@ export const remoteDeploy = (host = defaultRemoteHost) => deploy(host);
 export const remotePackageInstall = async (host: string, version: string) => {
   const normalizedVersion = normalizePackageVersion(version);
   const command = [
-    `export PATH=${remoteNodeDir}:$PATH`,
+    `export PATH=${remoteNodeDir()}:$PATH`,
     'set -e',
     'install_root="$HOME/.local/x-auto"',
     `release_dir="$install_root/releases/${normalizedVersion}"`,
@@ -86,7 +87,7 @@ export const remoteLoginStop = async (host: string, profileId: string, source: R
 export const remoteLoginStatus = async (host: string, profileId: string, source: RemoteSource = 'source') => (await ssh(host, `${runtimeGuard(source)} ${loginCommand('status', profileId, source)}`)).stdout.trim();
 
 export const remoteAction = async (host: string, args: string[], source: RemoteSource = 'source') => {
-  const command = `export PATH=${remoteNodeDir}:$PATH; export CHROME_PATH=/usr/bin/google-chrome-stable; ${runtimeGuard(source)} cd ${runtimeDir(source)}; node dist/cli.js ${args.map(shellQuote).join(' ')}`;
+  const command = `export PATH=${remoteNodeDir()}:$PATH; export CHROME_PATH=/usr/bin/google-chrome-stable; ${runtimeGuard(source)} cd ${runtimeDir(source)}; node dist/cli.js ${args.map(shellQuote).join(' ')}`;
   return (await ssh(host, command)).stdout.trim();
 };
 
@@ -104,7 +105,7 @@ export const remoteThreadAction = async (host: string, args: string[], localFile
 };
 
 export const remoteServiceInstall = async (host: string, profileId: string, handle: string, source: RemoteSource = 'source') => {
-  const command = `${runtimeGuard(source)} cd ${runtimeDir(source)}; bash scripts/install-user-service.sh ${shellQuote(normalizeProfileId(profileId))} ${shellQuote(handle)} ${shellQuote(source)}`;
+  const command = `${runtimeGuard(source)} cd ${runtimeDir(source)}; X_AUTO_NODE_DIR="${remoteNodeDir()}" bash scripts/install-user-service.sh ${shellQuote(normalizeProfileId(profileId))} ${shellQuote(handle)} ${shellQuote(source)}`;
   return (await ssh(host, command)).stdout.trim();
 };
 

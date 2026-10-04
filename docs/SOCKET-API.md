@@ -104,6 +104,19 @@ Failure:
 }
 ```
 
+HTTP status codes for failures:
+
+| Status | Meaning | Codes |
+| --- | --- | --- |
+| 404 | Unknown endpoint | `NOT_FOUND` |
+| 409 | Profile busy | `PROFILE_IN_USE` |
+| 422 | Invalid input | `INVALID_ARGUMENT`, `TEXT_EMPTY`, `TEXT_TOO_LONG`, `TARGET_INVALID`, `THREAD_INVALID` |
+| 502 | X did not behave as expected | `TARGET_NOT_FOUND`, `ACTION_NOT_AVAILABLE`, `THREAD_CONTROL_NOT_FOUND`, `PUBLISH_FAILED`, `PUBLISH_UNKNOWN`, `PARTIAL_THREAD` |
+| 503 | Environment or login not ready | `PROFILE_NOT_FOUND`, `SESSION_NOT_AUTHENTICATED`, `ACCOUNT_MISMATCH`, `BROWSER_LAUNCH_FAILED`, `BROWSER_NAVIGATION_FAILED` |
+| 500 | Unexpected error | `INTERNAL_ERROR` |
+
+Check `error.code` and `error.retryable` rather than the status alone. `PUBLISH_UNKNOWN` and `PARTIAL_THREAD` mean the post may already be live; check X before retrying.
+
 `XAutoClient` waits up to 5 minutes by default. On timeout it throws `CLIENT_TIMEOUT` with `retryable: false`; the queued action keeps running on the server and may still publish.
 
 The service never accepts account passwords or cookies and never rewrites supplied text.

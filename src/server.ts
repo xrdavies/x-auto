@@ -35,6 +35,27 @@ const writeJson = (response: import('node:http').ServerResponse, status: number,
   response.end(JSON.stringify(payload));
 };
 
+const actions = new Set(['check', 'post', 'thread', 'retweet', 'like', 'quote', 'comment']);
+
+const statusByCode: Record<string, number> = {
+  PROFILE_IN_USE: 409,
+  PROFILE_NOT_FOUND: 503,
+  SESSION_NOT_AUTHENTICATED: 503,
+  ACCOUNT_MISMATCH: 503,
+  BROWSER_LAUNCH_FAILED: 503,
+  BROWSER_NAVIGATION_FAILED: 503,
+  TARGET_NOT_FOUND: 502,
+  ACTION_NOT_AVAILABLE: 502,
+  THREAD_CONTROL_NOT_FOUND: 502,
+  PUBLISH_FAILED: 502,
+  PUBLISH_UNKNOWN: 502,
+  PARTIAL_THREAD: 502,
+  INTERNAL_ERROR: 500,
+};
+
+// 422 invalid input, 409 profile busy, 503 environment or login not ready, 502 X did not behave as expected.
+export const statusForError = (code: string) => statusByCode[code] ?? 422;
+
 const socketIsActive = (socketPath: string) => new Promise<boolean>((resolvePromise) => {
   const socket = createConnection(socketPath);
   socket.once('connect', () => { socket.destroy(); resolvePromise(true); });
@@ -63,6 +84,10 @@ export const startServer = async ({ profileId, profilePath, handle, socketPath }
     }
 
     const action = path.replace(/^\//, '');
+    if (!actions.has(action)) {
+      writeJson(response, 404, { success: false, action, error: { code: 'NOT_FOUND', message: `未知操作：${action}`, retryable: false } });
+      return;
+    }
     try {
       const payload = await readBody(request);
       const result = await enqueue(async () => {
@@ -90,7 +115,7 @@ export const startServer = async ({ profileId, profilePath, handle, socketPath }
     } catch (error) {
       await recordAction(selectedProfile.id, action, { success: false, error }).catch(() => undefined);
       const serialized = serializeError(error);
-      writeJson(response, serialized.code === 'INTERNAL_ERROR' ? 500 : 422, { success: false, action, error: serialized });
+      writeJson(response, statusForError(serialized.code), { success: false, action, error: serialized });
     }
   });
 
