@@ -84,7 +84,8 @@ export const startServer = async ({ profileId, profilePath, handle, socketPath }
         throw new XAutoError('INVALID_ARGUMENT', `未知操作：${action}`);
       });
       const data = result as Record<string, unknown>;
-      await recordAction(selectedProfile.id, action, { success: true, data });
+      // The action already happened on X; a logging failure must not report it as failed.
+      await recordAction(selectedProfile.id, action, { success: true, data }).catch(() => undefined);
       writeJson(response, 200, { success: true, action, ...data });
     } catch (error) {
       await recordAction(selectedProfile.id, action, { success: false, error }).catch(() => undefined);
